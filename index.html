@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cyber Junction - Latest Government Updates</title>
+  <title>CYBER Junction - Latest Government Updates</title>
   <meta name="description" content="Cyber Junction - Latest Jobs, Results, Admit Card, Admission, Scholarship and Sarkari Yojana Updates.">
   <link rel="stylesheet" href="style.css">
 </head>
@@ -20,8 +20,11 @@
     </a>
 
     <div class="header-right">
-      <div class="mini-links">
-        <span>सही जानकारी</span><span>|</span><span>समय पर अपडेट</span><span>|</span><span>आपके लिए</span>
+      <div class="header-actions">
+        <div class="mini-links">
+          <span>सही जानकारी</span><span>|</span><span>समय पर अपडेट</span><span>|</span><span>आपके लिए</span>
+        </div>
+        <a class="header-login-btn" href="/customer-portal/">Customer Login</a>
       </div>
       <div class="search">
         <input id="searchInput" type="search" placeholder="Search Jobs, Results, Admit Card, Scheme..." aria-label="Search this website" autocomplete="off" aria-controls="searchResults">
@@ -54,6 +57,7 @@
           <a href="#about-us" data-nav-view="about-us">About Us</a>
           <a href="#contact-us" data-nav-view="contact-us">Contact Us</a>
           <a href="#terms-and-conditions" data-nav-view="terms-and-conditions">Terms &amp; Conditions</a>
+          <a href="/customer-portal/">Customer Login</a>
         </div>
       </div>
     </div>
@@ -66,7 +70,7 @@
       <div class="hero-emblem">♜</div>
       <div>
         <span class="eyebrow">CYBER JUNCTION</span>
-        <h2>Sarkari Naukri</h2>
+        <h2>सरकारी सेवाएं</h2>
         <p>Latest Government Job Updates</p>
         <a class="yellow-btn" href="#jobs">View Latest Jobs →</a>
       </div>
@@ -81,28 +85,31 @@
 
   <section class="container layout">
     <aside class="left-sidebar">
-      <div class="side-card">
+      <div class="side-card aadhaar-services-card">
 
 
-        <div class="side-title">आधार कार्ड सेवाएं</div>
+        <div class="side-title"><span>आधार कार्ड </span><span class="aadhaar-services-title">सेवाएं</span></div>
+
         <li><a href="https://myaadhaarbeta.uidai.gov.in/genericDownloadAadhaar/en" target="_blank" rel="noopener noreferrer">आधार कार्ड डाउनलोड</a></li>
            <a href="job1.html" class="job-card">
-        <a href="#results">▤ UPDATE DETAILS</a>
-        <a href="#admit">🎟 ORDER PVC AADHAR</a>
+
+        <li><a href="https://myaadhaarbeta.uidai.gov.in/check-aadhaar-validity/en" target="_blank" rel="noopener noreferrer">आधार कार्ड update</a></li>
+           <a href="job1.html" class="job-card">
+
+        <li><a href="https://myaadhaarbeta.uidai.gov.in/pvc/en" target="_blank" rel="noopener noreferrer">ORDER PVC AADHAR</a></li>
+           <a href="job1.html" class="job-card">
       </div>
 
 
-        <article class="update-card teal-card" id="yojana" data-nav-view="yojana">
-          <div class="card-head"><span>🏛 सर्टिफिकेट डाउनलोड करे </span><a href="#yojana">View All →</a></div>
+        <article class="update-card teal-card rtps-services-card" id="yojana" data-nav-view="yojana">
+          <div class="card-head"><span>🏛 RTPS <span class="rtps-title-word">Bihar</span> Services</span></div>
           <ul class="post-list">
-             <li><a href="https://swcs.bihar.gov.in/RtpsReportView/certificate_download.jsp" target="_blank" rel="noopener noreferrer">जाती, आवासीय , आय</a></li>
-           <a href="job1.html" class="job-card">
-
-             <li><a href="https://serviceonline.bihar.gov.in/officials/citizenApplication.html" target="_blank" rel="noopener noreferrer">TRACK APPLICATION STATUS</a></li>
-           <a href="job1.html" class="job-card">
-  
-            
-           
+            <li><a href="https://myaadhaarbeta.uidai.gov.in/check-aadhaar-validity/en">जाति प्रमाण पत्र</li></a>
+            <li>आवासीय प्रमाण पत्र</li>
+            <li>आय प्रमाण पत्र</li>
+            <li>आचरण प्रमाण पत्र</li>
+            <li>Non-Creamy Layer (NCL)</li>
+            <li><a href="https://serviceonline.bihar.gov.in/officials/citizenApplication.html" target="_blank" rel="noopener noreferrer">Track Application Status</a></li>
           </ul>
         </article>
 
@@ -337,15 +344,15 @@
       <span class="page-eyebrow">WE’RE HERE TO HELP</span>
       <h1>Contact Us</h1>
       <p>For any query, suggestion, correction or information related to this website, you can get in touch with us using the form below.</p>
-      <form class="contact-form" action="#" method="post">
+      <form class="contact-form" id="contactForm" action="#" method="post">
         <label for="contactName">Name</label>
         <input id="contactName" name="name" type="text" autocomplete="name" required>
         <label for="contactEmail">Email</label>
         <input id="contactEmail" name="email" type="email" autocomplete="email" required>
         <label for="contactMessage">Message</label>
         <textarea id="contactMessage" name="message" rows="6" required></textarea>
-        <button type="submit" disabled>Submit</button>
-        <p class="form-notice">This form is not connected to an email or backend service yet, so submissions are currently unavailable.</p>
+        <button type="submit">Submit</button>
+        <p class="form-notice" id="contactResult" role="status" aria-live="polite"></p>
       </form>
     </div>
   </section>
@@ -376,15 +383,15 @@
      <img class="brand-logo" src="Untitled-1 copy.jpg" alt="Cyber Junction Logo">
       <div><h2>CYBER JUNCTION</h2><p>Latest Government Updates</p></div>
     </div>
-    <div><h3>Quick Links</h3><a href="#home">Home</a><a href="#about-us">About Us</a><a href="#contact-us">Contact Us</a><a href="#terms-and-conditions">Terms &amp; Conditions</a><a href="#">Privacy Policy</a></div>
+    <div><h3>Quick Links</h3><a href="#home">Home</a><a href="/customer-portal/">Customer Login</a><a href="#about-us">About Us</a><a href="#contact-us">Contact Us</a><a href="#terms-and-conditions">Terms &amp; Conditions</a><a href="#">Privacy Policy</a></div>
     <div><h3>Important Pages</h3><a href="#jobs">Latest Jobs</a><a href="#results">Results</a><a href="#admit">Admit Card</a><a href="#admission">Admission</a><a href="#scholarship">Scholarship</a></div>
     <div>
       <h3>Social Media</h3>
       <div class="footer-socials">
-        <a class="social-link facebook" href="https://www.facebook.com/" target="_blank" rel="noopener noreferrer" aria-label="Facebook"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13.5 22v-8h2.8l.4-3.2h-3.2V7.3c0-.9.3-1.6 1.7-1.6H17V2.7c-.4-.1-1.6-.2-3-.2-3 0-5 1.8-5 5.2v2.9H6.5V14h2.5v8h4.5z"/></svg></a>
+        <a class="social-link facebook" href="https://www.facebook.com/share/19aoTGscrA/" target="_blank" rel="noopener noreferrer" aria-label="Facebook"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13.5 22v-8h2.8l.4-3.2h-3.2V7.3c0-.9.3-1.6 1.7-1.6H17V2.7c-.4-.1-1.6-.2-3-.2-3 0-5 1.8-5 5.2v2.9H6.5V14h2.5v8h4.5z"/></svg></a>
         <a class="social-link youtube" href="https://www.youtube.com/" target="_blank" rel="noopener noreferrer" aria-label="YouTube"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M23.5 7.2a3.1 3.1 0 0 0-2.2-2.2C19.4 4.5 12 4.5 12 4.5s-7.4 0-9.3.5A3.1 3.1 0 0 0 .5 7.2 31.2 31.2 0 0 0 0 12a31.2 31.2 0 0 0 .5 4.8 3.1 3.1 0 0 0 2.2 2.2c1.9.5 9.3.5 9.3.5s7.4 0 9.3-.5a3.1 3.1 0 0 0 2.2-2.2A31.2 31.2 0 0 0 24 12a31.2 31.2 0 0 0-.5-4.8zM9.8 15.5v-7l6.3 3.5-6.3 3.5z"/></svg></a>
         <a class="social-link x" href="https://x.com/" target="_blank" rel="noopener noreferrer" aria-label="X"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.9 2h3.4l-7.5 8.6L23 22h-6.8l-5.3-7.4L4.7 22H1.3l8-9.2L1 2h7l4.8 6.8L18.9 2zm-1.2 18h1.9L7.2 3.9H5.2L17.7 20z"/></svg></a>
-        <a class="social-link instagram" href="https://www.instagram.com/" target="_blank" rel="noopener noreferrer" aria-label="Instagram"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 2h10a5 5 0 0 1 5 5v10a5 5 0 0 1-5 5H7a5 5 0 0 1-5-5V7a5 5 0 0 1 5-5zm0 2a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V7a3 3 0 0 0-3-3H7zm5 3.4A5.6 5.6 0 1 1 6.4 13 5.6 5.6 0 0 1 12 7.4zm0 2A3.6 3.6 0 1 0 15.6 13 3.6 3.6 0 0 0 12 9.4zm5.8-3.3a1.3 1.3 0 1 1-1.3-1.3 1.3 1.3 0 0 1 1.3 1.3z"/></svg></a>
+        <a class="social-link instagram" href="https://www.instagram.com/mr__abhi_612?stkn=MWVkcnE3Y3R4ZmV3MQ==" target="_blank" rel="noopener noreferrer" aria-label="Instagram"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 2h10a5 5 0 0 1 5 5v10a5 5 0 0 1-5 5H7a5 5 0 0 1-5-5V7a5 5 0 0 1 5-5zm0 2a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V7a3 3 0 0 0-3-3H7zm5 3.4A5.6 5.6 0 1 1 6.4 13 5.6 5.6 0 0 1 12 7.4zm0 2A3.6 3.6 0 1 0 15.6 13 3.6 3.6 0 0 0 12 9.4zm5.8-3.3a1.3 1.3 0 1 1-1.3-1.3 1.3 1.3 0 0 1 1.3 1.3z"/></svg></a>
         <a class="social-link email" href="mailto:akr325f@gmail.com" aria-label="Email"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6.5A2.5 2.5 0 0 1 5.5 4h13A2.5 2.5 0 0 1 21 6.5v11A2.5 2.5 0 0 1 18.5 20h-13A2.5 2.5 0 0 1 3 17.5v-11zm2 .3 7 5.2 7-5.2H5zm14.5 2.2-6.8 5.1a1 1 0 0 1-1.4 0L4.5 9v8.5c0 .3.2.5.5.5h13c.3 0 .5-.2.5-.5V9z"/></svg></a>
       </div>
     </div>
