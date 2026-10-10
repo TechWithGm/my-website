@@ -26,6 +26,18 @@ const knownSiteCategoryIds = new Set([
   "bihar", "career", "latest-news", "important-links", "popular-searches"
 ]);
 
+function fixPortalLinks() {
+  const portalUrl = window.location.protocol === "file:"
+    ? "http://localhost:5000/customer-portal/"
+    : "/customer-portal/";
+
+  document.querySelectorAll("[data-portal-link]").forEach((link) => {
+    link.href = portalUrl;
+  });
+}
+
+fixPortalLinks();
+
 async function submitContactForm(event) {
   event.preventDefault();
 
