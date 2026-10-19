@@ -475,6 +475,7 @@ menuBtn.addEventListener("click", () => {
 
 const moreToggle = document.getElementById("moreToggle");
 const moreMenu = document.getElementById("moreMenu");
+const certificateServiceMenus = document.querySelectorAll(".certificate-service-menu");
 const navigationViews = new Set([
   "home",
   "jobs",
@@ -535,6 +536,66 @@ moreToggle.addEventListener("click", () => {
   const isExpanded = moreToggle.getAttribute("aria-expanded") === "true";
   moreMenu.hidden = isExpanded;
   moreToggle.setAttribute("aria-expanded", String(!isExpanded));
+});
+
+certificateServiceMenus.forEach((menu) => {
+  const toggle = menu.querySelector(".certificate-service-toggle");
+  toggle.addEventListener("click", () => {
+    const isOpen = menu.classList.toggle("is-open");
+    toggle.setAttribute("aria-expanded", String(isOpen));
+    if (!isOpen) {
+      menu.querySelectorAll(".certificate-level-option.is-open").forEach((option) => {
+        option.classList.remove("is-open");
+        option.querySelector(".certificate-level-toggle").setAttribute("aria-expanded", "false");
+      });
+    }
+  });
+
+  menu.querySelectorAll(".certificate-level-toggle").forEach((levelToggle) => {
+    levelToggle.addEventListener("click", () => {
+      const option = levelToggle.closest(".certificate-level-option");
+      const isOpen = option.classList.toggle("is-open");
+      menu.querySelectorAll(".certificate-level-option").forEach((sibling) => {
+        if (sibling === option) return;
+        sibling.classList.remove("is-open");
+        sibling.querySelector(".certificate-level-toggle").setAttribute("aria-expanded", "false");
+      });
+      levelToggle.setAttribute("aria-expanded", String(isOpen));
+    });
+  });
+
+  menu.querySelectorAll("[data-certificate-service]").forEach((link) => {
+    link.addEventListener("click", (event) => {
+      if (link.getAttribute("href") === "#") event.preventDefault();
+    });
+  });
+});
+
+document.addEventListener("click", (event) => {
+  certificateServiceMenus.forEach((menu) => {
+    if (menu.contains(event.target)) return;
+    menu.classList.remove("is-open");
+    menu.querySelector(".certificate-service-toggle").setAttribute("aria-expanded", "false");
+  });
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key !== "Escape") return;
+  certificateServiceMenus.forEach((menu) => {
+    const openLevel = menu.querySelector(".certificate-level-option.is-open");
+    if (openLevel) {
+      openLevel.classList.remove("is-open");
+      const levelToggle = openLevel.querySelector(".certificate-level-toggle");
+      levelToggle.setAttribute("aria-expanded", "false");
+      levelToggle.focus();
+      return;
+    }
+    if (!menu.classList.contains("is-open")) return;
+    menu.classList.remove("is-open");
+    const toggle = menu.querySelector(".certificate-service-toggle");
+    toggle.setAttribute("aria-expanded", "false");
+    toggle.focus();
+  });
 });
 
 window.addEventListener("hashchange", () => {
