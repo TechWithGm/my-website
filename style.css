@@ -125,12 +125,15 @@ body[data-nav-view]:not([data-nav-view="home"]) .page-view{display:none}
 .aadhaar-services-title{position:relative;display:inline-block}
 .aadhaar-services-title::after{content:"★";position:absolute;top:-8px;right:-2px;color:#ea2c37;font-size:10px;line-height:1;animation:aadhaar-star-pulse 1.2s infinite ease-in-out}
 @keyframes aadhaar-star-pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.2;transform:scale(.7)}}
-.update-card.rtps-services-card{position:relative;border-top:4px solid #d90000}
-.rtps-services-card::before{content:"";position:absolute;inset:42px 0 0;z-index:0;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 140' fill='none' stroke='%23004d40' stroke-width='4'%3E%3Cpath d='M60 12v22m-25 5h50M42 39l-8 24h52l-8-24M34 63l8 12h36l8-12M50 77v14m20-14v14M42 94h36m-42 8h48m-42 8h36M24 124h72'/%3E%3Ccircle cx='60' cy='20' r='7'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:center 70%;background-size:105px auto;opacity:.1;pointer-events:none}
+.update-card.rtps-services-card{position:relative;align-self:start;border-top:4px solid #ef8c28;background:linear-gradient(135deg,#fff6e8 0%,#fff 48%,#eff9f0 100%)}
+.rtps-services-card::before{content:"";position:absolute;inset:42px 0 0;z-index:0;background:radial-gradient(circle at 92% 15%,rgba(22,130,75,.15) 0 42px,transparent 43px),radial-gradient(circle at 8% 90%,rgba(239,140,40,.13) 0 58px,transparent 59px);pointer-events:none}
+.rtps-services-card::after{content:"बिहार";position:absolute;right:12px;bottom:8px;z-index:0;color:#16824b;font-size:28px;font-weight:800;opacity:.08;pointer-events:none}
 .rtps-services-card>*{position:relative;z-index:1}
-.rtps-services-card .card-head{background:transparent;color:#000000}
+.rtps-services-card .card-head{background:linear-gradient(100deg,#ed8527,#16824b);color:#fff}
+.rtps-services-card .post-list li{border-bottom-color:rgba(22,130,75,.2)}
+.rtps-services-card .post-list li::before{color:#ed8527}
 .rtps-title-word{position:relative;display:inline-block}
-.rtps-title-word::after{content:"★";position:absolute;top:-8px;right:-3px;color:lab(53.23% 80.11 67.22);font-size:10px;line-height:1;animation:rtps-star-pulse 1.2s infinite ease-in-out}
+.rtps-title-word::after{content:"★";position:absolute;top:-8px;right:-3px;color:#ffd166;font-size:10px;line-height:1;animation:rtps-star-pulse 1.2s infinite ease-in-out}
 @keyframes rtps-star-pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.2;transform:scale(.7)}}
 .promo{background:linear-gradient(150deg,#0755ae,#087df0);border-radius:8px;padding:22px 12px;text-align:center;color:#fff;margin-bottom:16px;box-shadow:0 4px 12px #0755ae33}
 .promo-icon{font-size:40px;margin-bottom:5px}
@@ -207,3 +210,79 @@ body[data-nav-view]:not([data-nav-view="home"]) .page-view{display:none}
   .left-sidebar{grid-template-columns:1fr}.left-sidebar .side-card:first-child{grid-column:auto}
   .footer-grid{grid-template-columns:1fr}.copyright .container{display:block}.copyright span{display:block;margin:3px 0}
 }
+
+body[data-nav-view]:not([data-nav-view="home"]) .home-bhoomi-card{display:none}
+body[data-nav-view="bihar-bhoomi"] .layout{display:none}
+body[data-nav-view="bihar-bhoomi"] .bhoomi-page{display:block}
+.bhoomi-page{display:none;margin-top:20px;margin-bottom:34px}
+.home-bhoomi-card{position:relative;display:flex;align-items:center;gap:14px;margin-top:14px;padding:15px 18px;border:1px solid #f1c78c;border-left:5px solid #ed8527;border-radius:10px;background:linear-gradient(100deg,#fff6e7,#fff 48%,#eff8f0);box-shadow:0 4px 15px rgba(22,76,130,.08);transition:transform .18s ease,box-shadow .18s ease}
+.home-bhoomi-card:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(22,76,130,.14)}
+.home-bhoomi-card:focus-visible{outline:3px solid #0877e8;outline-offset:3px}
+.home-bhoomi-card .new-badge{position:absolute;top:10px;right:12px;margin:0}
+.home-bhoomi-icon{display:grid;width:48px;height:48px;flex:none;place-items:center;border-radius:13px;background:linear-gradient(145deg,#ffedcf,#def1e2);font-size:27px}
+.home-bhoomi-copy{display:grid;gap:3px;min-width:0;padding-right:76px}
+.home-bhoomi-copy strong{color:#092f63;font-size:16px}
+.home-bhoomi-copy>span{color:#526a83;font-size:12px}
+.home-bhoomi-cta{display:flex;flex:none;align-items:center;gap:8px;margin-left:auto;padding:9px 13px;border-radius:6px;background:#16824b;color:#fff;font-size:12px;font-weight:700}
+.home-bhoomi-cta b{font-size:17px}
+.bhoomi-hero{position:relative;overflow:hidden;padding:clamp(22px,4vw,38px);border:1px solid #b9d9f5;border-radius:14px;background:linear-gradient(115deg,#fff8e9 0%,#fff 45%,#eef8f0 100%);box-shadow:0 6px 20px rgba(22,76,130,.08)}
+.bhoomi-hero::after{content:"";position:absolute;right:-38px;bottom:-88px;width:240px;height:240px;border:28px solid rgba(22,130,75,.07);border-radius:50%;pointer-events:none}
+.bhoomi-eyebrow{display:block;color:#16824b;font-size:10px;font-weight:800;letter-spacing:.12em}
+.bhoomi-hero h1{margin:8px 0;color:#092f63;font-size:clamp(25px,4vw,36px)}
+.bhoomi-hero>p{max-width:780px;color:#425d75;font-size:14px}
+.bhoomi-notice{max-width:900px;margin-top:16px;padding:11px 13px;border-left:4px solid #ed8527;border-radius:5px;background:#fff2df;color:#70450f;font-size:12px}
+.bhoomi-help-link{display:inline-flex;margin-top:14px;color:#0757a8;font-size:13px;font-weight:700;text-decoration:underline;text-underline-offset:3px}
+.bhoomi-popular,.bhoomi-directory{margin-top:22px}
+.bhoomi-section-heading{display:flex;align-items:end;justify-content:space-between;gap:12px;margin-bottom:12px}
+.bhoomi-section-heading>div>span{color:#16824b;font-size:10px;font-weight:800;letter-spacing:.1em}
+.bhoomi-section-heading h2{margin-top:3px;color:#092f63;font-size:clamp(18px,2.5vw,23px)}
+.bhoomi-count{color:#64798e;font-size:12px}
+.bhoomi-featured-grid,.bhoomi-service-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px}
+.bhoomi-service-card{display:flex;min-width:0;flex-direction:column;padding:16px;border:1px solid #d5e3ef;border-radius:10px;background:#fff;box-shadow:0 3px 12px rgba(22,76,130,.06);transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease}
+.bhoomi-service-card:hover{transform:translateY(-2px);border-color:#9ec9e9;box-shadow:0 8px 18px rgba(22,76,130,.12)}
+.bhoomi-service-top{display:flex;align-items:center;gap:10px}
+.bhoomi-service-icon{display:grid;width:42px;height:42px;flex:none;place-items:center;border-radius:12px;background:linear-gradient(145deg,#fff0d9,#e9f6eb);font-size:22px}
+.bhoomi-service-card h3{color:#123e69;font-size:14px;line-height:1.4}
+.bhoomi-service-card p{flex:1;margin:10px 0 13px;color:#5a6f83;font-size:12px;line-height:1.6}
+.bhoomi-service-category{align-self:flex-start;margin-bottom:8px;padding:3px 7px;border-radius:20px;background:#edf5fc;color:#426785;font-size:10px;font-weight:700}
+.bhoomi-service-actions{display:flex;align-items:center;gap:10px;margin-top:auto}
+.bhoomi-open-button,.bhoomi-details-button{display:inline-flex;align-items:center;justify-content:center;min-height:36px;padding:7px 11px;border:0;border-radius:6px;font-size:11px;font-weight:700;text-align:center;cursor:pointer}
+.bhoomi-open-button{background:#0877e8;color:#fff}
+.bhoomi-open-button:hover{background:#063d86}
+.bhoomi-details-button{background:#edf5fc;color:#0757a8}
+.bhoomi-details-button:hover{background:#dceeff}
+.bhoomi-link-unavailable{color:#876212;font-size:11px;font-weight:700}
+.bhoomi-tools{display:flex;gap:10px;margin:14px 0}
+.bhoomi-search{display:flex;flex:1;align-items:center;gap:8px;min-width:0;height:44px;padding:0 12px;border:1px solid #cbdced;border-radius:7px;background:#fff;color:#0877e8}
+.bhoomi-search>span{font-size:23px}
+.bhoomi-search input{width:100%;border:0;outline:0;color:var(--text);font:inherit;font-size:13px}
+.bhoomi-filter select{height:44px;min-width:190px;padding:0 30px 0 11px;border:1px solid #cbdced;border-radius:7px;background:#fff;color:var(--text);font:inherit;font-size:12px}
+.bhoomi-empty{padding:22px;border:1px dashed #b9cde0;border-radius:8px;color:#526a83;text-align:center;font-size:13px}
+.bhoomi-empty[hidden]{display:none}
+.bhoomi-support{display:flex;align-items:center;gap:14px;margin-top:22px;padding:17px;border:1px solid #c6dfef;border-radius:10px;background:linear-gradient(100deg,#edf7ff,#fff)}
+.bhoomi-support>span{font-size:27px}
+.bhoomi-support>div{flex:1}
+.bhoomi-support h2{color:#123e69;font-size:15px}
+.bhoomi-support p{margin-top:3px;color:#5a6f83;font-size:12px}
+.bhoomi-support>a{padding:9px 12px;border-radius:6px;background:#16824b;color:#fff;font-size:11px;font-weight:700;white-space:nowrap}
+.bhoomi-modal{width:min(560px,calc(100% - 28px));max-height:min(82vh,720px);margin:auto;padding:0;border:0;border-radius:12px;background:#fff;color:var(--text);box-shadow:0 18px 60px rgba(6,36,68,.3)}
+.bhoomi-modal::backdrop{background:rgba(7,31,55,.58)}
+.bhoomi-modal-head{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;padding:20px 22px;border-bottom:1px solid #e1ebf3;background:linear-gradient(110deg,#fff7e9,#eff8f1)}
+.bhoomi-modal-head h2{margin-top:5px;color:#092f63;font-size:20px}
+.bhoomi-modal-close{width:34px;height:34px;border:0;border-radius:50%;background:#e4edf5;color:#123e69;font-size:24px;line-height:1;cursor:pointer}
+.bhoomi-modal-content{overflow:auto;padding:20px 22px}
+.bhoomi-modal-content p,.bhoomi-modal-content li{color:#4e657a;font-size:13px;line-height:1.7}
+.bhoomi-modal-content h3{margin:17px 0 5px;color:#123e69;font-size:14px}
+.bhoomi-modal-content ol{padding-left:20px}
+.bhoomi-modal-warning{margin-top:14px;padding:10px;border-left:3px solid #ed8527;background:#fff5e5}
+.bhoomi-modal-link{display:inline-flex;margin-top:17px;padding:10px 14px;border-radius:6px;background:#0877e8;color:#fff;font-size:12px;font-weight:700}
+.bhoomi-modal-link:hover{background:#063d86}
+.visually-hidden{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+@media(max-width:900px){.bhoomi-featured-grid,.bhoomi-service-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:560px){.bhoomi-tools{flex-direction:column}.bhoomi-filter select{width:100%}.bhoomi-featured-grid,.bhoomi-service-grid{grid-template-columns:1fr}.bhoomi-support{align-items:flex-start;flex-wrap:wrap}.bhoomi-support>div{flex-basis:calc(100% - 50px)}.bhoomi-support>a{margin-left:40px}.bhoomi-modal-head,.bhoomi-modal-content{padding:16px}.home-bhoomi-card{gap:10px;padding:14px 12px}.home-bhoomi-icon{width:40px;height:40px;font-size:23px}.home-bhoomi-copy{padding-right:52px}.home-bhoomi-copy strong{font-size:14px}.home-bhoomi-copy>span{font-size:11px}.home-bhoomi-card .new-badge{top:7px;right:8px;font-size:9px;padding:3px 8px}.home-bhoomi-cta{position:absolute;right:10px;bottom:10px;padding:6px 9px;font-size:10px}.home-bhoomi-copy{padding-bottom:24px}}
+.new-badge{position:relative;display:inline-flex;float:none;clear:both;align-items:center;align-self:flex-start;overflow:hidden;margin:0 0 2px;padding:4px 11px;border:1px solid rgba(255,255,255,.5);border-radius:999px;background:linear-gradient(110deg,#ef3038 0%,#ff641f 52%,#ef3038 100%);background-size:200% 100%;box-shadow:0 0 7px rgba(255,75,35,.55),0 0 15px rgba(255,75,35,.3);color:#fff;font-size:11px;font-weight:800;line-height:1.2;letter-spacing:.035em;animation:new-badge-glow 2.8s ease-in-out infinite,new-badge-shine 3.2s linear infinite}
+.new-badge::after{position:absolute;inset:-60% auto -60% -55%;width:38%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.85),transparent);content:"";transform:skewX(-22deg);animation:new-badge-sweep 3.2s ease-in-out infinite}
+@keyframes new-badge-glow{0%,100%{opacity:.78;box-shadow:0 0 5px rgba(255,75,35,.35),0 0 10px rgba(255,75,35,.18)}50%{opacity:1;box-shadow:0 0 10px rgba(255,75,35,.8),0 0 22px rgba(255,75,35,.48)}}
+@keyframes new-badge-shine{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+@keyframes new-badge-sweep{0%,12%{left:-55%;opacity:0}22%{opacity:.9}48%,100%{left:125%;opacity:0}}
+@media(prefers-reduced-motion:reduce){.new-badge,.new-badge::after{animation:none}.new-badge{opacity:1;box-shadow:0 0 8px rgba(255,75,35,.42)}}

@@ -488,6 +488,7 @@ const navigationViews = new Set([
   "latest-news",
   "important-links",
   "popular-searches",
+  "bihar-bhoomi",
   "about",
   "about-us",
   "contact-us",
@@ -547,3 +548,267 @@ document.addEventListener("click", (event) => {
 renderPosts();
 setNavigationView(window.location.hash.slice(1));
 loadManagedSiteContent();
+
+const bhoomiServices = [
+  {
+    id: "portal",
+    icon: "🏛",
+    title: "Bihar Bhumi Official Portal",
+    description: "राजस्व एवं भूमि सुधार विभाग, बिहार सरकार का आधिकारिक भूमि सेवा पोर्टल।",
+    category: "records",
+    categoryName: "जमीन का रिकॉर्ड",
+    href: "https://biharbhumi.bihar.gov.in/Biharbhumi/",
+    keywords: "official portal बिहार भूमि विभाग"
+  },
+  {
+    id: "apna-khata",
+    icon: "📒",
+    title: "अपना खाता / जमाबंदी पंजी देखें",
+    description: "ऑनलाइन जमाबंदी पंजी खोजने और जमीन के खाते का रिकॉर्ड देखने के लिए।",
+    category: "records",
+    categoryName: "जमीन का रिकॉर्ड",
+    href: "https://emutation.bihar.gov.in/biharBhumireport/ViewJamabandi.aspx",
+    keywords: "apna khata jamabandi khata register"
+  },
+  {
+    id: "jamabandi",
+    icon: "📄",
+    title: "जमाबंदी विवरण देखें",
+    description: "जिला और क्षेत्र चुनकर उपलब्ध जमाबंदी विवरण आधिकारिक पोर्टल पर देखें।",
+    category: "records",
+    categoryName: "जमीन का रिकॉर्ड",
+    href: "https://emutation.bihar.gov.in/biharBhumireport/ViewJamabandi.aspx",
+    keywords: "jamabandi details record"
+  },
+  {
+    id: "khata-khesra",
+    icon: "🔎",
+    title: "खेसरा एवं खाता संख्या से रिकॉर्ड खोजें",
+    description: "खाता और खेसरा से संबंधित भूमि रिकॉर्ड खोजने के लिए आधिकारिक जमाबंदी सेवा खोलें।",
+    category: "records",
+    categoryName: "जमीन का रिकॉर्ड",
+    href: "https://emutation.bihar.gov.in/biharBhumireport/ViewJamabandi.aspx",
+    keywords: "khesra khasra khata land record search"
+  },
+  {
+    id: "mutation-apply",
+    icon: "📝",
+    title: "दाखिल-खारिज (Mutation) आवेदन",
+    description: "बिहार भूमि पोर्टल के नागरिक लॉगिन से दाखिल-खारिज आवेदन शुरू करें।",
+    category: "applications",
+    categoryName: "आवेदन एवं स्थिति",
+    href: "https://biharbhumi.bihar.gov.in/Biharbhumi/UserLogin.aspx",
+    keywords: "mutation दाखिल खारिज apply application"
+  },
+  {
+    id: "mutation-status",
+    icon: "📍",
+    title: "दाखिल-खारिज आवेदन की स्थिति",
+    description: "आवेदन की प्रगति देखने के लिए आधिकारिक म्यूटेशन स्थिति पेज खोलें।",
+    category: "applications",
+    categoryName: "आवेदन एवं स्थिति",
+    href: "https://emutation.bihar.gov.in/biharBhumireport/MutationStatusNew.aspx",
+    keywords: "mutation status track application"
+  },
+  {
+    id: "land-tax",
+    icon: "💳",
+    title: "भू-लगान ऑनलाइन भुगतान",
+    description: "आधिकारिक भू-लगान पोर्टल पर जमीन का लगान देखें और भुगतान करें।",
+    category: "revenue",
+    categoryName: "लगान एवं नक्शा",
+    href: "https://www.bhulagan.bihar.gov.in/",
+    keywords: "bhu lagan land tax payment"
+  },
+  {
+    id: "lagan-receipt",
+    icon: "🧾",
+    title: "भू-लगान स्थिति एवं रसीद",
+    description: "भुगतान की स्थिति जाँचें और उपलब्ध होने पर आधिकारिक पोर्टल से रसीद प्राप्त करें।",
+    category: "revenue",
+    categoryName: "लगान एवं नक्शा",
+    href: "https://www.bhulagan.bihar.gov.in/",
+    keywords: "payment status receipt failed transaction"
+  },
+  {
+    id: "lpc",
+    icon: "📜",
+    title: "LPC (भूमि कब्जा प्रमाणपत्र)",
+    description: "LPC आवेदन के लिए नागरिक लॉगिन और आवेदन स्थिति के लिए आधिकारिक सेवा खोलें।",
+    category: "applications",
+    categoryName: "आवेदन एवं स्थिति",
+    href: "https://biharbhumi.bihar.gov.in/Biharbhumi/UserLogin.aspx",
+    keywords: "lpc land possession certificate"
+  },
+  {
+    id: "map",
+    icon: "🗺️",
+    title: "भू-नक्शा / जमीन का नक्शा",
+    description: "बिहार के भू-मानचित्र देखने के लिए राजस्व एवं भूमि अभिलेख निदेशालय का पोर्टल।",
+    category: "revenue",
+    categoryName: "लगान एवं नक्शा",
+    href: "https://bhunaksha.bihar.gov.in/10/index.jsp",
+    keywords: "bhu naksha land map survey"
+  },
+  {
+    id: "parimarjan",
+    icon: "✏️",
+    title: "परिमार्जन प्लस (जमाबंदी सुधार)",
+    description: "जमाबंदी से संबंधित सुधार के लिए बिहार सरकार का परिमार्जन प्लस पोर्टल।",
+    category: "applications",
+    categoryName: "आवेदन एवं स्थिति",
+    href: "https://parimarjanplus.bihar.gov.in/ParimarjanNew/userDashboard.aspx",
+    keywords: "parimarjan plus correction jamabandi sudhar"
+  },
+  {
+    id: "online-applications",
+    icon: "📲",
+    title: "ऑनलाइन आवेदन एवं आवेदन स्थिति",
+    description: "भूमि सेवाओं के आवेदन और स्थिति के लिए आधिकारिक बिहार भूमि पोर्टल पर जाएँ।",
+    category: "applications",
+    categoryName: "आवेदन एवं स्थिति",
+    href: "https://biharbhumi.bihar.gov.in/Biharbhumi/",
+    keywords: "online application status track"
+  },
+  {
+    id: "land-disputes",
+    icon: "⚖️",
+    title: "भूमि विवाद से संबंधित सेवाएँ",
+    description: "राजस्व न्यायालय की उपलब्ध वाद-सूची और भूमि विवाद से संबंधित सेवाएँ देखें।",
+    category: "courts",
+    categoryName: "विवाद एवं न्यायालय",
+    href: "https://emutation.bihar.gov.in/biharBhumireport/View_Cause_List",
+    keywords: "land dispute cause list objection"
+  },
+  {
+    id: "revenue-courts",
+    icon: "🏢",
+    title: "राजस्व न्यायालय सेवाएँ",
+    description: "राजस्व न्यायालय प्रबंधन प्रणाली (RCMS) का आधिकारिक पोर्टल खोलें।",
+    category: "courts",
+    categoryName: "विवाद एवं न्यायालय",
+    href: "https://biharbhumi.bihar.gov.in/Biharbhumi/RCMS/RCMSDefault.aspx",
+    keywords: "revenue court rcms tribunal"
+  },
+  {
+    id: "orders-notices",
+    icon: "📢",
+    title: "जमीन संबंधी आम सूचना एवं नवीनतम जानकारी",
+    description: "बिहार भूमि पोर्टल पर उपलब्ध दाखिल-खारिज की आम सूचनाएँ देखें।",
+    category: "notices",
+    categoryName: "आदेश एवं सूचनाएँ",
+    href: "https://biharbhumi.bihar.gov.in/Biharbhumi/MutationReport.aspx",
+    keywords: "orders notices latest information mutation report"
+  }
+];
+
+const bhoomiFeatured = document.getElementById("bhoomiFeatured");
+const bhoomiServicesContainer = document.getElementById("bhoomiServices");
+const bhoomiSearch = document.getElementById("bhoomiSearch");
+const bhoomiCategory = document.getElementById("bhoomiCategory");
+const bhoomiCount = document.getElementById("bhoomiCount");
+const bhoomiEmpty = document.getElementById("bhoomiEmpty");
+const bhoomiPopularSection = document.getElementById("bhoomiPopularSection");
+const bhoomiModal = document.getElementById("bhoomiModal");
+const bhoomiModalTitle = document.getElementById("bhoomiModalTitle");
+const bhoomiModalDescription = document.getElementById("bhoomiModalDescription");
+const bhoomiModalLink = document.getElementById("bhoomiModalLink");
+
+function createBhoomiServiceCard(service, featured = false) {
+  const card = document.createElement("article");
+  card.className = "bhoomi-service-card";
+  card.dataset.serviceId = service.id;
+
+  const category = document.createElement("span");
+  category.className = "bhoomi-service-category";
+  category.textContent = service.categoryName;
+
+  const top = document.createElement("div");
+  top.className = "bhoomi-service-top";
+  const icon = document.createElement("span");
+  icon.className = "bhoomi-service-icon";
+  icon.setAttribute("aria-hidden", "true");
+  icon.textContent = service.icon;
+  const title = document.createElement("h3");
+  title.textContent = service.title;
+  top.append(icon, title);
+
+  const description = document.createElement("p");
+  description.textContent = service.description;
+
+  const actions = document.createElement("div");
+  actions.className = "bhoomi-service-actions";
+  if (service.href) {
+    const open = document.createElement("a");
+    open.className = "bhoomi-open-button";
+    open.href = service.href;
+    open.target = "_blank";
+    open.rel = "noopener noreferrer";
+    open.textContent = "Open Service ↗";
+    actions.appendChild(open);
+  } else {
+    const unavailable = document.createElement("span");
+    unavailable.className = "bhoomi-link-unavailable";
+    unavailable.textContent = "Official Link Coming Soon";
+    actions.appendChild(unavailable);
+  }
+
+  const details = document.createElement("button");
+  details.className = "bhoomi-details-button";
+  details.type = "button";
+  details.dataset.bhoomiDetails = service.id;
+  details.textContent = "जानकारी";
+  actions.appendChild(details);
+  card.append(category, top, description, actions);
+  if (featured) card.classList.add("bhoomi-featured-card");
+  return card;
+}
+
+function renderBhoomiServices() {
+  const query = bhoomiSearch.value.trim().toLocaleLowerCase();
+  const category = bhoomiCategory.value;
+  const filtered = bhoomiServices.filter((service) => {
+    const matchesCategory = category === "all" || service.category === category;
+    const searchable = `${service.title} ${service.description} ${service.categoryName} ${service.keywords}`.toLocaleLowerCase();
+    return matchesCategory && (!query || searchable.includes(query));
+  });
+
+  bhoomiServicesContainer.replaceChildren(...filtered.map((service) => createBhoomiServiceCard(service)));
+  bhoomiCount.textContent = `${filtered.length} सेवाएँ`;
+  bhoomiEmpty.hidden = filtered.length !== 0;
+  bhoomiPopularSection.hidden = Boolean(query) || category !== "all";
+}
+
+function showBhoomiServiceDetails(serviceId) {
+  const service = bhoomiServices.find((item) => item.id === serviceId);
+  if (!service) return;
+  bhoomiModalTitle.textContent = service.title;
+  bhoomiModalDescription.textContent = service.description;
+  if (service.href) {
+    bhoomiModalLink.href = service.href;
+    bhoomiModalLink.hidden = false;
+  } else {
+    bhoomiModalLink.removeAttribute("href");
+    bhoomiModalLink.hidden = true;
+  }
+  bhoomiModal.showModal();
+}
+
+bhoomiServices.slice(0, 4).forEach((service) => {
+  bhoomiFeatured.appendChild(createBhoomiServiceCard(service, true));
+});
+renderBhoomiServices();
+bhoomiSearch.addEventListener("input", renderBhoomiServices);
+bhoomiCategory.addEventListener("change", renderBhoomiServices);
+bhoomiServicesContainer.addEventListener("click", (event) => {
+  const detailsButton = event.target.closest("[data-bhoomi-details]");
+  if (detailsButton) showBhoomiServiceDetails(detailsButton.dataset.bhoomiDetails);
+});
+bhoomiFeatured.addEventListener("click", (event) => {
+  const detailsButton = event.target.closest("[data-bhoomi-details]");
+  if (detailsButton) showBhoomiServiceDetails(detailsButton.dataset.bhoomiDetails);
+});
+document.getElementById("bhoomiModalClose").addEventListener("click", () => bhoomiModal.close());
+bhoomiModal.addEventListener("click", (event) => {
+  if (event.target === bhoomiModal) bhoomiModal.close();
+});
