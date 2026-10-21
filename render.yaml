@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: cyber-junction
+    runtime: docker
+    plan: free
+    region: singapore
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /
+    envVars:
+      - key: CJ_DB_HOST
+        sync: false
+      - key: CJ_DB_PORT
+        sync: false
+      - key: CJ_DB_NAME
+        sync: false
+      - key: CJ_DB_USER
+        sync: false
+      - key: CJ_DB_PASSWORD
+        sync: false
+      - key: CJ_APP_KEY
+        sync: false
+      - key: CJ_ADMIN_SETUP_KEY
+        sync: false
+      - key: CJ_BASE_URL
+        sync: false
+      - key: CJ_TIMEZONE
+        value: Asia/Kolkata
