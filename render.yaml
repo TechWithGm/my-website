@@ -8,13 +8,13 @@ services:
     healthCheckPath: /
     envVars:
       - key: CJ_DB_HOST
-        sync: false
+        value: aws-0-ap-southeast-1.pooler.supabase.com
       - key: CJ_DB_PORT
         value: "5432"
       - key: CJ_DB_NAME
         value: postgres
       - key: CJ_DB_USER
-        sync: false
+        value: postgres.twhoqfhedhqaoknygbsg
       - key: CJ_DB_PASSWORD
         sync: false
       - key: CJ_APP_KEY
