@@ -1,0 +1,20 @@
+Options -Indexes
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+
+  RewriteRule ^backend(?:/|$) - [F,L,NC]
+  RewriteRule ^api/?(.*)$ api.php?path=$1 [QSA,L]
+  RewriteRule ^admin/?$ admin/index.php [L]
+  RewriteRule ^category/([a-z0-9-]+)/?$ category.php?slug=$1 [QSA,L,NC]
+  RewriteRule ^sitemap\.xml$ sitemap.php [L]
+  RewriteRule ^article\.html$ /csir-cftri-technician-recruitment-2026/ [R=301,L,NC]
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+  RewriteRule ^([a-z0-9][a-z0-9-]*)/?$ article.php?slug=$1 [QSA,L,NC]
+</IfModule>
+
+<FilesMatch "^(?:\.env|composer\.(?:json|lock)|README\.md)$">
+  Require all denied
+</FilesMatch>
