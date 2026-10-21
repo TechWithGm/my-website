@@ -2,12 +2,21 @@
 
 declare(strict_types=1);
 
-require_once __DIR__ . '/backend/bootstrap.php';
-
 header('X-Content-Type-Options: nosniff');
 header('Referrer-Policy: strict-origin-when-cross-origin');
 header('X-Frame-Options: DENY');
 header("Content-Security-Policy: default-src 'none'; frame-ancestors 'none'; base-uri 'none'");
+
+try {
+    require_once __DIR__ . '/backend/bootstrap.php';
+} catch (Throwable $error) {
+    error_log('Cyber Junction API bootstrap error: ' . $error->getMessage());
+    http_response_code(500);
+    header('Content-Type: application/json; charset=utf-8');
+    header('Cache-Control: no-store');
+    echo json_encode(['error' => 'The service is temporarily unavailable. Check the server configuration and logs.']);
+    exit;
+}
 
 function cj_api_route(): string
 {
