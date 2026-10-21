@@ -10,9 +10,9 @@ services:
       - key: CJ_DB_HOST
         sync: false
       - key: CJ_DB_PORT
-        sync: false
+        value: "5432"
       - key: CJ_DB_NAME
-        sync: false
+        value: postgres
       - key: CJ_DB_USER
         sync: false
       - key: CJ_DB_PASSWORD
@@ -22,6 +22,6 @@ services:
       - key: CJ_ADMIN_SETUP_KEY
         sync: false
       - key: CJ_BASE_URL
-        sync: false
+        value: https://cyber-junction.onrender.com
       - key: CJ_TIMEZONE
         value: Asia/Kolkata
