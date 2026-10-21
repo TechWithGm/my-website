@@ -15,12 +15,11 @@ const menuBtn = document.getElementById("menuBtn");
 const mainNav = document.getElementById("mainNav");
 const contactForm = document.getElementById("contactForm");
 const contactApiUrl =
-  window.location.protocol === "file:" ||
-  (["localhost", "127.0.0.1"].includes(window.location.hostname) &&
-    window.location.port !== "5000")
+  window.location.protocol === "file:"
     ? "http://localhost:5000/api/contact"
     : "/api/contact";
 const siteContentApiUrl = contactApiUrl.replace(/\/api\/contact$/, "/api/site-content");
+const articleSearchApiUrl = siteContentApiUrl.replace(/\/api\/site-content$/, "/api/articles");
 const knownSiteCategoryIds = new Set([
   "jobs", "results", "admit", "admission", "scholarship", "yojana",
   "bihar", "career", "latest-news", "important-links", "popular-searches"
@@ -83,13 +82,19 @@ function renderPosts(posts = latestPosts) {
   });
 }
 
-function appendSafeLink(container, { title, url = "", displayDate = "", description = "" }) {
+function appendSafeLink(container, { title, url = "", displayDate = "", description = "", keywords = "", isArticle = false }) {
   const link = document.createElement("a");
   link.textContent = title;
   link.href = url || "#";
+  if (keywords) link.dataset.keywords = keywords;
+  if (isArticle) link.dataset.articleLink = "true";
   if (/^https?:\/\//i.test(url)) {
     link.target = "_blank";
     link.rel = "noopener noreferrer";
+    if (isArticle) {
+      link.target = "_self";
+      link.rel = "";
+    }
   }
   if (displayDate) {
     const date = document.createElement("small");
@@ -108,9 +113,15 @@ function renderManagedCategory(category, items) {
       item.className = "latest-item";
       if (post.url) {
         item.href = post.url;
+        if (post.keywords) item.dataset.keywords = post.keywords;
+        if (post.isArticle) item.dataset.articleLink = "true";
         if (/^https?:\/\//i.test(post.url)) {
           item.target = "_blank";
           item.rel = "noopener noreferrer";
+          if (post.isArticle) {
+            item.target = "_self";
+            item.rel = "";
+          }
         }
       }
       const title = document.createElement("span");
@@ -131,7 +142,7 @@ function renderManagedCategory(category, items) {
   if (!card) {
     card = Array.from(cardGrid.children).find((element) => element.id === category.id);
   }
-  if (!card && (category.homeVisible || category.navVisible)) {
+  if (!card && category.homeVisible) {
     card = document.createElement("article");
     card.id = category.id;
     card.dataset.managedCategory = category.id;
@@ -142,6 +153,9 @@ function renderManagedCategory(category, items) {
     heading.className = "card-head";
     const title = document.createElement("span");
     heading.appendChild(title);
+    const viewAll = document.createElement("a");
+    viewAll.textContent = "View All →";
+    heading.appendChild(viewAll);
     const list = document.createElement("ul");
     list.className = "post-list";
     card.append(heading, list);
@@ -150,6 +164,7 @@ function renderManagedCategory(category, items) {
   if (card) {
     card.dataset.managedCategory = category.id;
     card.dataset.homeVisible = String(category.homeVisible);
+    card.hidden = !category.homeVisible;
   }
 
   const sideCard = document.querySelector(`.right-sidebar [data-nav-view="${category.id}"]`);
@@ -159,6 +174,11 @@ function renderManagedCategory(category, items) {
   if (container.classList.contains("post-list")) {
     const title = card.querySelector(".card-head span");
     if (title) title.textContent = `${category.icon} ${category.name}`;
+    const viewAll = card.querySelector(".card-head a");
+    if (viewAll && category.url) {
+      viewAll.href = category.url;
+      viewAll.textContent = "View All →";
+    }
     container.replaceChildren();
     items.forEach((post) => {
       const entry = document.createElement("li");
@@ -205,8 +225,7 @@ function renderManagedNavigation(categories, pages) {
       return;
     }
     const link = document.createElement("a");
-    link.href = `#${category.id}`;
-    link.dataset.navView = category.id;
+    link.href = category.url;
     link.textContent = `${category.icon} ${category.name}`;
     moreMenu.appendChild(link);
   });
@@ -355,6 +374,9 @@ function getSearchText(element) {
   element.querySelectorAll("a[title], a[aria-label]").forEach((link) => {
     values.push(link.getAttribute("title"), link.getAttribute("aria-label"));
   });
+  element.querySelectorAll("a[data-keywords], a[data-search]").forEach((link) => {
+    values.push(link.dataset.keywords, link.dataset.search);
+  });
 
   return values.filter(Boolean).join(" ").replace(/\s+/g, " ").trim();
 }
@@ -413,8 +435,13 @@ function makeSnippet(text, terms) {
   return `${start > 0 ? "…" : ""}${text.slice(start, end)}${end < text.length ? "…" : ""}`;
 }
 
-function showSearchResults() {
-  const query = searchInput.value.trim().toLocaleLowerCase();
+let searchRequestId = 0;
+let searchDebounce;
+
+async function showSearchResults() {
+  const rawQuery = searchInput.value.trim();
+  const query = rawQuery.toLocaleLowerCase();
+  const requestId = ++searchRequestId;
   searchResults.replaceChildren();
   searchResults.hidden = !query;
   if (!query) return;
@@ -424,19 +451,18 @@ function showSearchResults() {
     terms.every((term) => searchableText.includes(term))
   );
 
-  if (!matches.length) {
-    const emptyMessage = document.createElement("div");
-    emptyMessage.className = "search-empty";
-    emptyMessage.textContent = "No results found";
-    searchResults.appendChild(emptyMessage);
-    return;
-  }
-
   matches.forEach(({ element, text, context }) => {
-    const result = document.createElement("button");
+    const articleLink = element.matches("a[data-article-link]")
+      ? element
+      : element.querySelector("a[data-article-link]");
+    const result = document.createElement(articleLink ? "a" : "button");
     result.className = "search-result";
-    result.type = "button";
-    result.setAttribute("role", "option");
+    if (articleLink) {
+      result.href = articleLink.href;
+    } else {
+      result.type = "button";
+      result.setAttribute("role", "option");
+    }
 
     const title = document.createElement("strong");
     highlightText(title, text.slice(0, 90), terms);
@@ -449,21 +475,75 @@ function showSearchResults() {
       result.appendChild(description);
     }
 
-    result.addEventListener("click", () => {
-      element.scrollIntoView({ behavior: "smooth", block: "center" });
-      searchResults.hidden = true;
-    });
+    if (!articleLink) {
+      result.addEventListener("click", () => {
+        element.scrollIntoView({ behavior: "smooth", block: "center" });
+        searchResults.hidden = true;
+      });
+    }
     searchResults.appendChild(result);
   });
+
+  if (!matches.length) {
+    const loading = document.createElement("div");
+    loading.className = "search-empty";
+    loading.textContent = "Searching published articles…";
+    searchResults.appendChild(loading);
+  }
+
+  try {
+    const response = await fetch(`${articleSearchApiUrl}?q=${encodeURIComponent(rawQuery)}&limit=12`, {
+      cache: "no-store"
+    });
+    if (!response.ok) throw new Error(`Article search request failed (${response.status}).`);
+    const result = await response.json();
+    if (requestId !== searchRequestId || searchInput.value.trim() !== rawQuery) return;
+
+    const existingUrls = new Set(Array.from(searchResults.querySelectorAll("a.search-result"), (link) => link.href));
+    (Array.isArray(result.data) ? result.data : []).forEach((article) => {
+      if (!article.url || existingUrls.has(article.url)) return;
+      const link = document.createElement("a");
+      link.className = "search-result";
+      link.href = article.url;
+      const title = document.createElement("strong");
+      highlightText(title, article.title, terms);
+      const description = document.createElement("small");
+      const summary = [article.category, article.shortDescription].filter(Boolean).join(" · ");
+      highlightText(description, summary, terms);
+      link.append(title, description);
+      searchResults.appendChild(link);
+      existingUrls.add(article.url);
+    });
+    if (!searchResults.querySelector(".search-result")) {
+      const emptyMessage = document.createElement("div");
+      emptyMessage.className = "search-empty";
+      emptyMessage.textContent = "No results found";
+      searchResults.replaceChildren(emptyMessage);
+    }
+  } catch (error) {
+    if (requestId !== searchRequestId || searchInput.value.trim() !== rawQuery) return;
+    console.error("Could not search published articles:", error);
+    if (!searchResults.querySelector(".search-result")) {
+      const unavailable = document.createElement("div");
+      unavailable.className = "search-empty";
+      unavailable.textContent = "Search is temporarily unavailable.";
+      searchResults.replaceChildren(unavailable);
+    }
+  }
 }
 
-searchInput.addEventListener("input", showSearchResults);
+searchInput.addEventListener("input", () => {
+  window.clearTimeout(searchDebounce);
+  searchDebounce = window.setTimeout(showSearchResults, 180);
+});
 searchInput.addEventListener("keydown", (event) => {
   if (event.key === "Enter") {
     event.preventDefault();
+    window.clearTimeout(searchDebounce);
     showSearchResults();
   } else if (event.key === "Escape") {
     searchInput.value = "";
+    window.clearTimeout(searchDebounce);
     showSearchResults();
   }
 });
