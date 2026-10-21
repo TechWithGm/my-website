@@ -1,34 +1,20 @@
 # Cyber Junction Dynamic Articles
 
-This project keeps the existing static Cyber Junction homepage and adds a PHP/MySQL article CMS beside it. PHP 8.1+ and MySQL 5.7.8+ (or MariaDB 10.2.7+) are required; the source-only workspace does not include a PHP runtime or a database server.
+This project keeps the existing static Cyber Junction homepage and adds a PHP/PostgreSQL article CMS beside it. PHP 8.1+ with PDO PostgreSQL, `mbstring` and `openssl`, plus PostgreSQL 14+ are required; the source-only workspace does not include a PHP runtime or a database server.
 
 ## Included
 
 - Reusable, server-rendered article pages at `/{slug}/`, category pages at `/category/{slug}/`, and a generated `/sitemap.xml`.
 - Secure admin dashboard at `/admin/` with one-time first-admin setup, login/logout, article search and filters, draft/publish/unpublish, edit, delete confirmation, preview, featured articles, categories, and Latest Updates.
-- MySQL schema and an explicitly labelled **draft-only** demonstration article. It contains no invented recruitment dates or eligibility data and is not visible publicly.
+- PostgreSQL schema and an explicitly labelled **draft-only** demonstration article. It contains no invented recruitment dates or eligibility data and is not visible publicly.
 - Published article content automatically populates the existing homepage category cards and Latest Updates. The existing homepage layout, navigation, contact form and customer-portal links remain in place.
 - Old article slugs redirect after a slug edit. Drafts, unpublished articles, future-dated articles and articles in inactive categories are excluded from public routes, search, homepage lists and the sitemap.
 
 ## Local setup on Windows
 
-1. Install PHP 8.1 or later with the `pdo_mysql`, `mbstring` and `openssl` extensions, plus MySQL 5.7.8+ or MariaDB 10.2.7+. The current workspace machine does not have PHP, MySQL, or MariaDB on `PATH`. XAMPP is one way to install the local stack; the project itself does not require Composer or npm.
-2. In MySQL, create the database and a dedicated app user. Then import `backend/schema.sql` as a database administrator; it preserves the database and seeds categories plus one draft demo article.
-
-   ```sql
-   CREATE DATABASE cyber_junction CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-   CREATE USER 'cj_app'@'localhost' IDENTIFIED BY 'use-a-unique-database-password';
-   GRANT SELECT, INSERT, UPDATE, DELETE ON cyber_junction.* TO 'cj_app'@'localhost';
-   ```
-
-   From PowerShell, import the schema using an administrator account:
-
-   ```powershell
-   & $env:ComSpec /c 'mysql --default-character-set=utf8mb4 -u root -p < "D:\TRY CJ\backend\schema.sql"'
-   ```
-
-   For shared hosting, create the database in the hosting panel first. If the host assigns a prefixed database name, change the first `CREATE DATABASE` and `USE` statements in the schema before importing it.
-3. Copy `backend/config.local.php.example` to `backend/config.local.php`. Set the MySQL database name, app username/password, base URL and two different random keys (`app_key` and `admin_setup_key`). Keep this local config private; it is excluded from version control and direct requests to `backend/` are denied.
+1. Install PHP 8.1 or later with the `pdo_pgsql`, `mbstring` and `openssl` extensions, plus PostgreSQL 14+. The project itself does not require Composer or npm.
+2. Create a PostgreSQL project (Supabase is supported) and import `backend/schema.sql` using the provider's SQL editor. The schema is safe to run again and seeds categories plus one draft demo article.
+3. Copy `backend/config.local.php.example` to `backend/config.local.php`. Set the PostgreSQL host, port, database name, username/password, HTTPS base URL and two different random keys (`app_key` and `admin_setup_key`). Keep this local config private; it is excluded from version control and direct requests to `backend/` are denied.
 
    Generate independent random keys in PowerShell:
 
@@ -62,17 +48,17 @@ The article search includes title, category, short description and editor-suppli
 
 ## Hosting and deployment
 
-- Upload the project to the PHP document root on an Apache host with PHP 8.1+, PDO MySQL, `mbstring`, `openssl`, MySQL 5.7.8+ or MariaDB 10.2.7+, and `mod_rewrite` enabled. Allow the root `.htaccess` to run (`AllowOverride` enabled).
-- **Render:** The repository includes a Docker-based Apache/PHP 8.3 deployment and a `render.yaml` Blueprint. In Render, select the `master` branch and root Blueprint path `render.yaml`. The Blueprint creates a free web service; it does not create a database. Before syncing, have an externally hosted MySQL 5.7.8+ / MariaDB 10.2.7+ database ready and enter its connection values and independent random `CJ_APP_KEY` / `CJ_ADMIN_SETUP_KEY` secrets directly in Render. Import `backend/schema.sql` into that database first, and allow connections from Render. After service creation, set `CJ_BASE_URL` to the service's HTTPS URL, redeploy, complete first-admin setup, then remove `CJ_ADMIN_SETUP_KEY` from the service environment and redeploy. Do not put database credentials in Git or chat.
-- Import `backend/schema.sql`, adapting its database name for the hosting account. Create a database user limited to the app database with `SELECT`, `INSERT`, `UPDATE` and `DELETE`; run schema changes separately with an administrative database user.
+- Upload the project to the PHP document root on an Apache host with PHP 8.1+, PDO PostgreSQL, `mbstring`, `openssl`, PostgreSQL 14+, and `mod_rewrite` enabled. Allow the root `.htaccess` to run (`AllowOverride` enabled).
+- **Render + Supabase:** The repository includes a Docker-based Apache/PHP 8.3 deployment and a `render.yaml` Blueprint. Create a Supabase PostgreSQL project and run `backend/schema.sql` in its SQL Editor. For Render, use Supabase's **Session pooler** connection details (IPv4-compatible), set `CJ_DB_HOST`, `CJ_DB_PORT`, `CJ_DB_NAME`, `CJ_DB_USER`, `CJ_DB_PASSWORD`, `CJ_APP_KEY`, `CJ_ADMIN_SETUP_KEY` and `CJ_BASE_URL` in Render's Environment settings. Set the base URL to the service's HTTPS origin with no trailing slash. Complete one-time admin setup over HTTPS, then remove `CJ_ADMIN_SETUP_KEY` from the Render environment and redeploy. Do not put database credentials in Git or chat.
+- Import `backend/schema.sql` into the PostgreSQL database. Use the provider-generated app credentials and keep them private.
 - Set `CJ_DB_HOST`, `CJ_DB_PORT`, `CJ_DB_NAME`, `CJ_DB_USER`, `CJ_DB_PASSWORD`, `CJ_APP_KEY`, `CJ_BASE_URL` and (only during first-admin setup) `CJ_ADMIN_SETUP_KEY` in the hosting environment, or use a protected `backend/config.local.php`. Set `CJ_BASE_URL` to the HTTPS site origin with no trailing slash.
 - Enforce HTTPS at the host/proxy, disable directory listings, protect configuration and SQL files, and keep `backend/` outside public access (the included `.htaccess` denies direct access). Do not deploy with the PHP development server.
 - Complete the one-time admin setup over HTTPS, then remove `CJ_ADMIN_SETUP_KEY` / `admin_setup_key`. Back up the database and any externally hosted featured images. Configure regular database backups and server-log monitoring.
-- If the hosting provider does not support PHP/MySQL or Apache rewrite rules, use an equivalent host-supported backend and URL rewrite configuration; do not use a browser-only database or expose credentials to JavaScript.
+- If the hosting provider does not support PHP/PostgreSQL or Apache rewrite rules, use an equivalent host-supported backend and URL rewrite configuration; do not use a browser-only database or expose credentials to JavaScript.
 
 ## Security and testing checklist
 
-- [ ] Verify HTTPS, private database credentials, two independent random application/setup keys and a dedicated least-privilege MySQL account.
+- [ ] Verify HTTPS, private database credentials, two independent random application/setup keys and a dedicated least-privilege PostgreSQL account.
 - [ ] Confirm the first-admin setup is closed after use; test login, wrong-password throttling, idle session expiry, logout and rejection of missing/invalid CSRF tokens.
 - [ ] Create, preview, save draft, publish, edit, unpublish and delete an article. Confirm title/slug uniqueness, a slug-change 301 redirect and category updates.
 - [ ] Confirm draft/unpublished/future-dated/inactive-category articles do not appear in article routes, search, category pages, homepage cards or sitemap; verify unknown URLs return HTTP 404.
@@ -80,4 +66,4 @@ The article search includes title, category, short description and editor-suppli
 - [ ] Test category creation/deactivation, Latest Updates create/edit/hide/delete, search by title/category/keyword, the contact form and existing homepage navigation/customer-portal links.
 - [ ] Check PHP and web-server logs after invalid input and failed database connections; verify errors do not reveal stack traces or credentials to public responses.
 
-This source tree has no bundled PHP/MySQL server. Runtime database, admin-authentication and Apache rewrite tests must be run after installing/configuring the local stack or deploying to the target PHP host.
+This source tree has no bundled PHP/PostgreSQL server. Runtime database, admin-authentication and Apache rewrite tests must be run after installing/configuring the local stack or deploying to the target PHP host.

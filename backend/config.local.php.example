@@ -2,9 +2,9 @@
 
 return [
     'db_host' => '127.0.0.1',
-    'db_port' => '3306',
-    'db_name' => 'cyber_junction',
-    'db_user' => 'cyber_junction',
+    'db_port' => '5432',
+    'db_name' => 'postgres',
+    'db_user' => 'postgres',
     'db_password' => 'CHANGE_THIS_DATABASE_PASSWORD',
     'app_key' => 'CHANGE_THIS_TO_A_RANDOM_SECRET_OF_AT_LEAST_32_CHARACTERS',
     'admin_setup_key' => 'CHANGE_THIS_TO_A_DIFFERENT_RANDOM_SECRET',

@@ -1,8 +1,8 @@
 FROM php:8.3-apache
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends libonig-dev \
-    && docker-php-ext-install mbstring pdo_mysql \
+    && apt-get install -y --no-install-recommends libonig-dev libpq-dev \
+    && docker-php-ext-install mbstring pdo_pgsql \
     && a2enmod rewrite \
     && printf '<Directory /var/www/html>\n    AllowOverride All\n    Require all granted\n</Directory>\n' > /etc/apache2/conf-available/app.conf \
     && a2enconf app \

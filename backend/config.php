@@ -28,8 +28,8 @@ function cj_config(): array
 
     $config = [
         'db_host' => $read('db_host', 'CJ_DB_HOST', '127.0.0.1'),
-        'db_port' => $read('db_port', 'CJ_DB_PORT', '3306'),
-        'db_name' => $read('db_name', 'CJ_DB_NAME', 'cyber_junction'),
+        'db_port' => $read('db_port', 'CJ_DB_PORT', '5432'),
+        'db_name' => $read('db_name', 'CJ_DB_NAME', 'postgres'),
         'db_user' => $read('db_user', 'CJ_DB_USER'),
         'db_password' => $read('db_password', 'CJ_DB_PASSWORD'),
         'app_key' => $read('app_key', 'CJ_APP_KEY'),

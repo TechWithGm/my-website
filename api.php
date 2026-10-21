@@ -141,7 +141,7 @@ function cj_login_limited(PDO $db): bool
 {
     $stmt = $db->prepare(
         'SELECT COUNT(*) FROM admin_login_attempts
-         WHERE ip_hash = ? AND succeeded = 0 AND attempted_at >= DATE_SUB(NOW(), INTERVAL 15 MINUTE)'
+         WHERE ip_hash = ? AND succeeded = 0 AND attempted_at >= CURRENT_TIMESTAMP - INTERVAL \'15 minutes\''
     );
     $stmt->execute([cj_client_ip_hash()]);
     return (int) $stmt->fetchColumn() >= 8;
@@ -155,7 +155,7 @@ function cj_record_login(PDO $db, bool $succeeded): void
         $stmt = $db->prepare('DELETE FROM admin_login_attempts WHERE ip_hash = ? AND succeeded = 0');
         $stmt->execute([cj_client_ip_hash()]);
     }
-    $db->exec('DELETE FROM admin_login_attempts WHERE attempted_at < DATE_SUB(NOW(), INTERVAL 2 DAY)');
+    $db->exec("DELETE FROM admin_login_attempts WHERE attempted_at < CURRENT_TIMESTAMP - INTERVAL '2 days'");
 }
 
 function cj_admin_article_input(array $input): array
@@ -177,7 +177,7 @@ function cj_admin_article_list(PDO $db): never
     $where = [];
     $params = [];
     if ($query !== '') {
-        $where[] = '(a.title LIKE ? OR a.short_description LIKE ? OR a.keywords LIKE ?)';
+        $where[] = '(a.title ILIKE ? OR a.short_description ILIKE ? OR a.keywords ILIKE ?)';
         $term = '%' . str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $query) . '%';
         array_push($params, $term, $term, $term);
     }
@@ -224,10 +224,11 @@ function cj_admin_save_article(PDO $db, ?int $id): never
                  sections, official_notification_url, apply_online_url, official_website_url)
                 VALUES (:title, :slug, :category_slug, :short_description, :meta_description, :keywords, :featured_image,
                  :author_name, :status, :is_featured, :published_at, :updated_at, :main_content, :important_notice,
-                 :sections, :official_notification_url, :apply_online_url, :official_website_url)';
+                 :sections, :official_notification_url, :apply_online_url, :official_website_url)
+                 RETURNING id';
             $stmt = $db->prepare($sql);
             $stmt->execute($article);
-            $id = (int) $db->lastInsertId();
+            $id = (int) $stmt->fetchColumn();
         } else {
             $sql = 'UPDATE articles SET title=:title, slug=:slug, category_slug=:category_slug,
                 short_description=:short_description, meta_description=:meta_description, keywords=:keywords,
@@ -246,7 +247,7 @@ function cj_admin_save_article(PDO $db, ?int $id): never
                 $updateRedirects->execute([$article['slug'], $oldSlug]);
                 $redirect = $db->prepare(
                     'INSERT INTO article_redirects (old_slug, new_slug) VALUES (?, ?)
-                     ON DUPLICATE KEY UPDATE new_slug = VALUES(new_slug)'
+                     ON CONFLICT (old_slug) DO UPDATE SET new_slug = EXCLUDED.new_slug'
                 );
                 $redirect->execute([$oldSlug, $article['slug']]);
             }
@@ -259,7 +260,7 @@ function cj_admin_save_article(PDO $db, ?int $id): never
         if ($db->inTransaction()) {
             $db->rollBack();
         }
-        if ($error->getCode() === '23000') {
+        if ($error->getCode() === '23505') {
             cj_send_json(['error' => 'That URL slug is already in use, or the change conflicts with existing data.'], 409);
         }
         throw $error;
@@ -286,7 +287,7 @@ function cj_admin_categories(PDO $db, string $method, ?string $slug): never
         try {
             $stmt->execute(array_values($data));
         } catch (PDOException $error) {
-            if ($error->getCode() === '23000') {
+            if ($error->getCode() === '23505') {
                 cj_send_json(['error' => 'That category slug already exists.'], 409);
             }
             throw $error;
@@ -353,9 +354,9 @@ function cj_admin_latest_updates(PDO $db, string $method, ?int $id): never
         cj_require_admin();
         $input = cj_json_input();
         $data = cj_normalize_latest_update($input);
-        $stmt = $db->prepare('INSERT INTO latest_updates (title,url,description,display_date,is_published,sort_order) VALUES (?,?,?,?,?,?)');
+        $stmt = $db->prepare('INSERT INTO latest_updates (title,url,description,display_date,is_published,sort_order) VALUES (?,?,?,?,?,?) RETURNING id');
         $stmt->execute(array_values($data));
-        cj_send_json(['data' => ['id' => (int) $db->lastInsertId()] + $data], 201);
+        cj_send_json(['data' => ['id' => (int) $stmt->fetchColumn()] + $data], 201);
     }
     if ($method === 'PUT' && $id !== null) {
         cj_require_admin();
@@ -439,24 +440,24 @@ function cj_admin_dispatch(PDO $db, array $segments): never
             cj_record_login($db, false);
             cj_send_json(['error' => 'Setup key is not valid.'], 403);
         }
-        $email = filter_var(trim((string) ($input['email'] ?? '')), FILTER_VALIDATE_EMAIL);
+        $email = filter_var(strtolower(trim((string) ($input['email'] ?? ''))), FILTER_VALIDATE_EMAIL);
         $password = (string) ($input['password'] ?? '');
         if (!$email || strlen($password) < 12 || strlen($password) > 200) {
             cj_send_json(['error' => 'Enter a valid email and a password of at least 12 characters.'], 422);
         }
-        $setupLock = (int) $db->query("SELECT GET_LOCK('cj_admin_setup', 5)")->fetchColumn();
+        $setupLock = (int) $db->query("SELECT CASE WHEN pg_try_advisory_lock(hashtext('cj_admin_setup')) THEN 1 ELSE 0 END")->fetchColumn();
         if ($setupLock !== 1) {
             cj_send_json(['error' => 'Administrator setup is busy. Try again shortly.'], 503);
         }
         if (cj_admin_count($db) !== 0) {
-            $db->query("SELECT RELEASE_LOCK('cj_admin_setup')");
+            $db->query("SELECT pg_advisory_unlock(hashtext('cj_admin_setup'))");
             cj_send_json(['error' => 'Initial administrator setup is already closed.'], 409);
         }
         try {
             $stmt = $db->prepare('INSERT INTO admins (email,password_hash) VALUES (?,?)');
             $stmt->execute([$email, password_hash($password, PASSWORD_DEFAULT)]);
         } finally {
-            $db->query("SELECT RELEASE_LOCK('cj_admin_setup')");
+            $db->query("SELECT pg_advisory_unlock(hashtext('cj_admin_setup'))");
         }
         cj_record_login($db, true);
         cj_send_json(['success' => true, 'message' => 'Administrator created. Sign in to continue.'], 201);
@@ -468,7 +469,7 @@ function cj_admin_dispatch(PDO $db, array $segments): never
             cj_send_json(['error' => 'Too many login attempts. Try again in 15 minutes.'], 429);
         }
         $input = cj_json_input();
-        $email = filter_var(trim((string) ($input['email'] ?? '')), FILTER_VALIDATE_EMAIL);
+        $email = filter_var(strtolower(trim((string) ($input['email'] ?? ''))), FILTER_VALIDATE_EMAIL);
         $password = (string) ($input['password'] ?? '');
         $stmt = $db->prepare('SELECT id,password_hash FROM admins WHERE email = ? LIMIT 1');
         $stmt->execute([$email ?: '']);
@@ -482,7 +483,7 @@ function cj_admin_dispatch(PDO $db, array $segments): never
         $_SESSION['admin_id'] = (int) $admin['id'];
         $_SESSION['last_activity'] = time();
         $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-        $stmt = $db->prepare('UPDATE admins SET last_login_at = NOW() WHERE id = ?');
+        $stmt = $db->prepare('UPDATE admins SET last_login_at = CURRENT_TIMESTAMP WHERE id = ?');
         $stmt->execute([(int) $admin['id']]);
         cj_send_json(['success' => true, 'csrfToken' => $_SESSION['csrf_token']]);
     }
@@ -559,7 +560,7 @@ try {
             $params[] = cj_slug($category, 'Category');
         }
         if ($query !== '') {
-            $where .= ' AND (a.title LIKE ? OR a.short_description LIKE ? OR a.keywords LIKE ? OR c.name LIKE ?)';
+            $where .= ' AND (a.title ILIKE ? OR a.short_description ILIKE ? OR a.keywords ILIKE ? OR c.name ILIKE ?)';
             $term = '%' . str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $query) . '%';
             array_push($params, $term, $term, $term, $term);
         }
