@@ -2,12 +2,22 @@
 
 declare(strict_types=1);
 
-require_once __DIR__ . '/backend/bootstrap.php';
-
 header('X-Content-Type-Options: nosniff');
 header('Referrer-Policy: strict-origin-when-cross-origin');
 header('X-Frame-Options: DENY');
 header("Content-Security-Policy: default-src 'none'; frame-ancestors 'none'; base-uri 'none'");
+
+try {
+    require_once __DIR__ . '/backend/bootstrap.php';
+    require_once __DIR__ . '/backend/homepage-defaults.php';
+} catch (Throwable $error) {
+    error_log('Cyber Junction API bootstrap error: ' . $error->getMessage());
+    http_response_code(500);
+    header('Content-Type: application/json; charset=utf-8');
+    header('Cache-Control: no-store');
+    echo json_encode(['error' => 'The service is temporarily unavailable. Check the server configuration and logs.']);
+    exit;
+}
 
 function cj_api_route(): string
 {
@@ -118,14 +128,130 @@ function cj_public_content(PDO $db): array
         'categories' => $categories,
         'items' => $items,
         'pages' => [],
-        'settings' => [
-            'heroTitle' => 'सरकारी सेवाएं',
-            'heroSubtitle' => 'Latest Government Job Updates',
-            'heroButtonLabel' => 'View Latest Jobs →',
-            'heroButtonUrl' => '#jobs',
-            'aboutIntro' => '',
-        ],
+        'settings' => cj_homepage_settings($db),
     ];
+}
+
+function cj_homepage_settings(PDO $db): array
+{
+    $stored = $db->query('SELECT content FROM homepage_settings WHERE id = 1')->fetchColumn();
+    if ($stored === false) {
+        return cj_homepage_defaults();
+    }
+    $content = json_decode((string) $stored, true);
+    if (!is_array($content)) {
+        throw new RuntimeException('Stored homepage settings are invalid JSON.');
+    }
+    $defaults = cj_homepage_defaults();
+    foreach ($defaults as $key => $default) {
+        if (!array_key_exists($key, $content)) {
+            $content[$key] = $default;
+        }
+    }
+    if (!is_array($content['homeLayout'] ?? null)) {
+        $content['homeLayout'] = $defaults['homeLayout'];
+    } else {
+        foreach ($defaults['homeLayout'] as $key => $default) {
+            if (!array_key_exists($key, $content['homeLayout'])) {
+                $content['homeLayout'][$key] = $default;
+            }
+        }
+        foreach (['titles', 'useCustomLists', 'columns'] as $section) {
+            if (!is_array($content['homeLayout'][$section] ?? null)) {
+                $content['homeLayout'][$section] = $defaults['homeLayout'][$section];
+            }
+            foreach ($defaults['homeLayout'][$section] as $key => $default) {
+                if (!array_key_exists($key, $content['homeLayout'][$section])) {
+                    $content['homeLayout'][$section][$key] = $default;
+                }
+            }
+        }
+    }
+    if (isset($content['branding']) && is_array($content['branding'])) {
+        unset($content['branding']['loginLabel'], $content['branding']['loginUrl']);
+    }
+    if (isset($content['hero']) && is_array($content['hero'])) {
+        unset($content['hero']['loginLabel']);
+    }
+    foreach (['footer' => 'quickLinks', 'navigation' => 'moreLinks'] as $section => $field) {
+        if (!isset($content[$section][$field]) || !is_array($content[$section][$field])) {
+            continue;
+        }
+        $content[$section][$field] = array_values(array_filter(
+            $content[$section][$field],
+            static function (mixed $item): bool {
+                if (!is_array($item)) {
+                    return true;
+                }
+                $title = strtolower(trim((string) ($item['title'] ?? '')));
+                $url = trim((string) ($item['url'] ?? ''));
+                return $title !== 'customer login'
+                    && !preg_match('~^/customer-portal(?:/|$)~i', $url);
+            }
+        ));
+    }
+    return $content;
+}
+
+function cj_validate_homepage_value(mixed $value, int $depth = 0): mixed
+{
+    if ($depth > 12) {
+        cj_send_json(['error' => 'Homepage content is nested too deeply.'], 422);
+    }
+    if (is_string($value)) {
+        if (strlen($value) > 10000 || !mb_check_encoding($value, 'UTF-8')) {
+            cj_send_json(['error' => 'Homepage text must be valid UTF-8 and no longer than 10,000 bytes per field.'], 422);
+        }
+        return $value;
+    }
+    if (is_bool($value) || is_int($value) || is_float($value) || $value === null) {
+        return $value;
+    }
+    if (!is_array($value) || count($value) > 500) {
+        cj_send_json(['error' => 'Homepage content contains an unsupported value or too many items.'], 422);
+    }
+    $validated = [];
+    foreach ($value as $key => $item) {
+        if (is_string($key) && (
+            strlen($key) > 80
+            || !preg_match('/^[A-Za-z0-9_-]+$/', $key)
+            || in_array($key, ['__proto__', 'prototype', 'constructor'], true)
+        )) {
+            cj_send_json(['error' => 'Homepage content contains an invalid field name.'], 422);
+        }
+        $validated[$key] = cj_validate_homepage_value($item, $depth + 1);
+    }
+    return $validated;
+}
+
+function cj_admin_homepage(PDO $db, string $method): never
+{
+    cj_require_admin();
+    if ($method === 'GET') {
+        cj_send_json(['data' => cj_homepage_settings($db)]);
+    }
+    if ($method === 'PUT') {
+        $input = cj_json_input();
+        if (!isset($input['content']) || !is_array($input['content'])) {
+            cj_send_json(['error' => 'Homepage content must be a JSON object.'], 422);
+        }
+        $content = cj_validate_homepage_value($input['content']);
+        try {
+            $encoded = json_encode($content, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        } catch (JsonException $error) {
+            cj_send_json(['error' => 'Homepage content could not be encoded.'], 422);
+        }
+        if (strlen($encoded) > 1000000) {
+            cj_send_json(['error' => 'Homepage content must be no larger than 1 MB.'], 422);
+        }
+        $stmt = $db->prepare(
+            'INSERT INTO homepage_settings (id, content) VALUES (1, CAST(? AS JSONB))
+             ON CONFLICT (id) DO UPDATE SET content = EXCLUDED.content'
+        );
+        $stmt->execute([$encoded]);
+        cj_send_json(['data' => $content]);
+    }
+    cj_send_json(['error' => 'Method not allowed.'], 405);
 }
 
 function cj_require_csrf_for_login(): void
@@ -141,7 +267,7 @@ function cj_login_limited(PDO $db): bool
 {
     $stmt = $db->prepare(
         'SELECT COUNT(*) FROM admin_login_attempts
-         WHERE ip_hash = ? AND succeeded = 0 AND attempted_at >= DATE_SUB(NOW(), INTERVAL 15 MINUTE)'
+         WHERE ip_hash = ? AND succeeded = 0 AND attempted_at >= CURRENT_TIMESTAMP - INTERVAL \'15 minutes\''
     );
     $stmt->execute([cj_client_ip_hash()]);
     return (int) $stmt->fetchColumn() >= 8;
@@ -155,7 +281,7 @@ function cj_record_login(PDO $db, bool $succeeded): void
         $stmt = $db->prepare('DELETE FROM admin_login_attempts WHERE ip_hash = ? AND succeeded = 0');
         $stmt->execute([cj_client_ip_hash()]);
     }
-    $db->exec('DELETE FROM admin_login_attempts WHERE attempted_at < DATE_SUB(NOW(), INTERVAL 2 DAY)');
+    $db->exec("DELETE FROM admin_login_attempts WHERE attempted_at < CURRENT_TIMESTAMP - INTERVAL '2 days'");
 }
 
 function cj_admin_article_input(array $input): array
@@ -177,7 +303,7 @@ function cj_admin_article_list(PDO $db): never
     $where = [];
     $params = [];
     if ($query !== '') {
-        $where[] = '(a.title LIKE ? OR a.short_description LIKE ? OR a.keywords LIKE ?)';
+        $where[] = '(a.title ILIKE ? OR a.short_description ILIKE ? OR a.keywords ILIKE ?)';
         $term = '%' . str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $query) . '%';
         array_push($params, $term, $term, $term);
     }
@@ -224,10 +350,11 @@ function cj_admin_save_article(PDO $db, ?int $id): never
                  sections, official_notification_url, apply_online_url, official_website_url)
                 VALUES (:title, :slug, :category_slug, :short_description, :meta_description, :keywords, :featured_image,
                  :author_name, :status, :is_featured, :published_at, :updated_at, :main_content, :important_notice,
-                 :sections, :official_notification_url, :apply_online_url, :official_website_url)';
+                 :sections, :official_notification_url, :apply_online_url, :official_website_url)
+                 RETURNING id';
             $stmt = $db->prepare($sql);
             $stmt->execute($article);
-            $id = (int) $db->lastInsertId();
+            $id = (int) $stmt->fetchColumn();
         } else {
             $sql = 'UPDATE articles SET title=:title, slug=:slug, category_slug=:category_slug,
                 short_description=:short_description, meta_description=:meta_description, keywords=:keywords,
@@ -246,7 +373,7 @@ function cj_admin_save_article(PDO $db, ?int $id): never
                 $updateRedirects->execute([$article['slug'], $oldSlug]);
                 $redirect = $db->prepare(
                     'INSERT INTO article_redirects (old_slug, new_slug) VALUES (?, ?)
-                     ON DUPLICATE KEY UPDATE new_slug = VALUES(new_slug)'
+                     ON CONFLICT (old_slug) DO UPDATE SET new_slug = EXCLUDED.new_slug'
                 );
                 $redirect->execute([$oldSlug, $article['slug']]);
             }
@@ -259,7 +386,7 @@ function cj_admin_save_article(PDO $db, ?int $id): never
         if ($db->inTransaction()) {
             $db->rollBack();
         }
-        if ($error->getCode() === '23000') {
+        if ($error->getCode() === '23505') {
             cj_send_json(['error' => 'That URL slug is already in use, or the change conflicts with existing data.'], 409);
         }
         throw $error;
@@ -286,7 +413,7 @@ function cj_admin_categories(PDO $db, string $method, ?string $slug): never
         try {
             $stmt->execute(array_values($data));
         } catch (PDOException $error) {
-            if ($error->getCode() === '23000') {
+            if ($error->getCode() === '23505') {
                 cj_send_json(['error' => 'That category slug already exists.'], 409);
             }
             throw $error;
@@ -353,9 +480,9 @@ function cj_admin_latest_updates(PDO $db, string $method, ?int $id): never
         cj_require_admin();
         $input = cj_json_input();
         $data = cj_normalize_latest_update($input);
-        $stmt = $db->prepare('INSERT INTO latest_updates (title,url,description,display_date,is_published,sort_order) VALUES (?,?,?,?,?,?)');
+        $stmt = $db->prepare('INSERT INTO latest_updates (title,url,description,display_date,is_published,sort_order) VALUES (?,?,?,?,?,?) RETURNING id');
         $stmt->execute(array_values($data));
-        cj_send_json(['data' => ['id' => (int) $db->lastInsertId()] + $data], 201);
+        cj_send_json(['data' => ['id' => (int) $stmt->fetchColumn()] + $data], 201);
     }
     if ($method === 'PUT' && $id !== null) {
         cj_require_admin();
@@ -439,24 +566,24 @@ function cj_admin_dispatch(PDO $db, array $segments): never
             cj_record_login($db, false);
             cj_send_json(['error' => 'Setup key is not valid.'], 403);
         }
-        $email = filter_var(trim((string) ($input['email'] ?? '')), FILTER_VALIDATE_EMAIL);
+        $email = filter_var(strtolower(trim((string) ($input['email'] ?? ''))), FILTER_VALIDATE_EMAIL);
         $password = (string) ($input['password'] ?? '');
         if (!$email || strlen($password) < 12 || strlen($password) > 200) {
             cj_send_json(['error' => 'Enter a valid email and a password of at least 12 characters.'], 422);
         }
-        $setupLock = (int) $db->query("SELECT GET_LOCK('cj_admin_setup', 5)")->fetchColumn();
+        $setupLock = (int) $db->query("SELECT CASE WHEN pg_try_advisory_lock(hashtext('cj_admin_setup')) THEN 1 ELSE 0 END")->fetchColumn();
         if ($setupLock !== 1) {
             cj_send_json(['error' => 'Administrator setup is busy. Try again shortly.'], 503);
         }
         if (cj_admin_count($db) !== 0) {
-            $db->query("SELECT RELEASE_LOCK('cj_admin_setup')");
+            $db->query("SELECT pg_advisory_unlock(hashtext('cj_admin_setup'))");
             cj_send_json(['error' => 'Initial administrator setup is already closed.'], 409);
         }
         try {
             $stmt = $db->prepare('INSERT INTO admins (email,password_hash) VALUES (?,?)');
             $stmt->execute([$email, password_hash($password, PASSWORD_DEFAULT)]);
         } finally {
-            $db->query("SELECT RELEASE_LOCK('cj_admin_setup')");
+            $db->query("SELECT pg_advisory_unlock(hashtext('cj_admin_setup'))");
         }
         cj_record_login($db, true);
         cj_send_json(['success' => true, 'message' => 'Administrator created. Sign in to continue.'], 201);
@@ -468,7 +595,7 @@ function cj_admin_dispatch(PDO $db, array $segments): never
             cj_send_json(['error' => 'Too many login attempts. Try again in 15 minutes.'], 429);
         }
         $input = cj_json_input();
-        $email = filter_var(trim((string) ($input['email'] ?? '')), FILTER_VALIDATE_EMAIL);
+        $email = filter_var(strtolower(trim((string) ($input['email'] ?? ''))), FILTER_VALIDATE_EMAIL);
         $password = (string) ($input['password'] ?? '');
         $stmt = $db->prepare('SELECT id,password_hash FROM admins WHERE email = ? LIMIT 1');
         $stmt->execute([$email ?: '']);
@@ -482,7 +609,7 @@ function cj_admin_dispatch(PDO $db, array $segments): never
         $_SESSION['admin_id'] = (int) $admin['id'];
         $_SESSION['last_activity'] = time();
         $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-        $stmt = $db->prepare('UPDATE admins SET last_login_at = NOW() WHERE id = ?');
+        $stmt = $db->prepare('UPDATE admins SET last_login_at = CURRENT_TIMESTAMP WHERE id = ?');
         $stmt->execute([(int) $admin['id']]);
         cj_send_json(['success' => true, 'csrfToken' => $_SESSION['csrf_token']]);
     }
@@ -528,6 +655,9 @@ function cj_admin_dispatch(PDO $db, array $segments): never
     if ($resource === 'categories') {
         cj_admin_categories($db, $method, $identifier);
     }
+    if ($resource === 'homepage' && $identifier === null) {
+        cj_admin_homepage($db, $method);
+    }
     if ($resource === 'latest-updates') {
         $id = $identifier === null ? null : filter_var($identifier, FILTER_VALIDATE_INT);
         if ($identifier !== null && !$id) {
@@ -559,7 +689,7 @@ try {
             $params[] = cj_slug($category, 'Category');
         }
         if ($query !== '') {
-            $where .= ' AND (a.title LIKE ? OR a.short_description LIKE ? OR a.keywords LIKE ? OR c.name LIKE ?)';
+            $where .= ' AND (a.title ILIKE ? OR a.short_description ILIKE ? OR a.keywords ILIKE ? OR c.name ILIKE ?)';
             $term = '%' . str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $query) . '%';
             array_push($params, $term, $term, $term, $term);
         }
