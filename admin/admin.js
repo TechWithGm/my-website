@@ -131,7 +131,154 @@
   async function loadHomepage() {
     const result = await request("homepage");
     homepageContent = result.data;
+    renderHomepageLayoutEditor();
     renderHomepageEditor();
+  }
+
+  function ensureHomepageLayout() {
+    if (!homepageContent.homeLayout || typeof homepageContent.homeLayout !== "object") {
+      homepageContent.homeLayout = {};
+    }
+    const layout = homepageContent.homeLayout;
+    if (!layout.titles || typeof layout.titles !== "object") layout.titles = {};
+    ["quickLinks", "results", "admit", "jobs"].forEach((key) => {
+      if (typeof layout.titles[key] !== "string") layout.titles[key] = "";
+    });
+    if (!Array.isArray(layout.quickLinks)) layout.quickLinks = [];
+    if (!layout.useCustomLists || typeof layout.useCustomLists !== "object") layout.useCustomLists = {};
+    if (!layout.columns || typeof layout.columns !== "object") layout.columns = {};
+    ["results", "admit", "jobs"].forEach((key) => {
+      layout.useCustomLists[key] = layout.useCustomLists[key] !== false;
+      if (!Array.isArray(layout.columns[key])) layout.columns[key] = [];
+    });
+    return layout;
+  }
+
+  function createHomepageLinkInput(title, value, placeholder, onInput) {
+    const label = document.createElement("label");
+    label.textContent = title;
+    const input = document.createElement("input");
+    input.type = "text";
+    input.value = value;
+    input.placeholder = placeholder;
+    input.maxLength = title === "Link URL" ? 2048 : 300;
+    input.addEventListener("input", () => onInput(input.value));
+    label.appendChild(input);
+    return label;
+  }
+
+  function renderHomepageLinkList(parent, { key, title, description, categoryId = "" }) {
+    const layout = ensureHomepageLayout();
+    const section = document.createElement("section");
+    section.className = "homepage-link-section";
+    const heading = document.createElement("div");
+    heading.className = "homepage-link-section-heading";
+    const headingCopy = document.createElement("div");
+    const sectionTitle = document.createElement("h3");
+    sectionTitle.textContent = title;
+    const titleInput = createHomepageLinkInput(
+      categoryId ? "Card heading" : "Section heading",
+      layout.titles[key],
+      title,
+      (value) => { layout.titles[key] = value; }
+    );
+    const sectionDescription = document.createElement("p");
+    sectionDescription.textContent = description;
+    headingCopy.append(sectionTitle, titleInput, sectionDescription);
+    heading.appendChild(headingCopy);
+
+    const list = categoryId ? layout.columns[categoryId] : layout.quickLinks;
+    const automatic = categoryId && layout.useCustomLists[categoryId] === false;
+    if (categoryId) {
+      const automaticLabel = document.createElement("label");
+      automaticLabel.className = "homepage-auto-toggle";
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.checked = automatic;
+      checkbox.addEventListener("change", () => {
+        layout.useCustomLists[categoryId] = !checkbox.checked;
+        renderHomepageLayoutEditor();
+      });
+      const labelText = document.createElement("span");
+      labelText.textContent = "Automatically show published articles in this category";
+      automaticLabel.append(checkbox, labelText);
+      heading.appendChild(automaticLabel);
+    }
+    section.appendChild(heading);
+
+    const entries = document.createElement("div");
+    entries.className = "homepage-link-entries";
+    entries.hidden = Boolean(automatic);
+    list.forEach((item, index) => {
+      if (!item || typeof item !== "object") list[index] = { title: "", url: "" };
+      const current = list[index];
+      const entry = document.createElement("div");
+      entry.className = "homepage-link-entry";
+      const fields = document.createElement("div");
+      fields.className = "homepage-link-fields";
+      fields.append(
+        createHomepageLinkInput("Link title", typeof current.title === "string" ? current.title : "", "Enter link text", (value) => {
+          current.title = value;
+        }),
+        createHomepageLinkInput("Link URL", typeof current.url === "string" ? current.url : "", "https://... or /internal-path", (value) => {
+          current.url = value;
+        })
+      );
+
+      const actions = document.createElement("div");
+      actions.className = "homepage-json-item-actions";
+      const moveUp = makeAction("↑", () => {
+        [list[index - 1], list[index]] = [list[index], list[index - 1]];
+        renderHomepageLayoutEditor();
+      }, "quiet-button");
+      moveUp.setAttribute("aria-label", `Move ${title} item ${index + 1} up`);
+      moveUp.disabled = index === 0;
+      const moveDown = makeAction("↓", () => {
+        [list[index], list[index + 1]] = [list[index + 1], list[index]];
+        renderHomepageLayoutEditor();
+      }, "quiet-button");
+      moveDown.setAttribute("aria-label", `Move ${title} item ${index + 1} down`);
+      moveDown.disabled = index === list.length - 1;
+      const remove = makeAction("Remove", () => {
+        list.splice(index, 1);
+        renderHomepageLayoutEditor();
+      }, "quiet-button");
+      actions.append(moveUp, moveDown, remove);
+      entry.append(fields, actions);
+      entries.appendChild(entry);
+    });
+
+    const add = makeAction(`＋ Add ${categoryId ? "link" : "quick link"}`, () => {
+      if (categoryId) layout.useCustomLists[categoryId] = true;
+      list.push({ title: "", url: "" });
+      renderHomepageLayoutEditor();
+    }, "secondary-button");
+    entries.appendChild(add);
+    section.appendChild(entries);
+    parent.appendChild(section);
+  }
+
+  function renderHomepageLayoutEditor() {
+    const editor = document.getElementById("homeLayoutEditor");
+    if (!editor) return;
+    editor.replaceChildren();
+    renderHomepageLinkList(editor, {
+      key: "quickLinks",
+      title: "Top Quick Links — Important Updates",
+      description: "Manage the colorful buttons shown above the homepage content. Add, edit, remove, or reorder links here; their display order follows this list."
+    });
+    [
+      ["results", "Result"],
+      ["admit", "Admit Card"],
+      ["jobs", "Latest Job"],
+    ].forEach(([key, title]) => {
+      renderHomepageLinkList(editor, {
+        key,
+        title,
+        categoryId: key,
+        description: `Links shown in the ${title} homepage card.`
+      });
+    });
   }
 
   function homepageFieldLabel(key) {
@@ -199,6 +346,32 @@
         heading.className = "homepage-json-entry-heading";
         const itemTitle = document.createElement("strong");
         itemTitle.textContent = `${homepageFieldLabel(key)} ${index + 1}`;
+        const actions = document.createElement("div");
+        actions.className = "homepage-json-item-actions";
+        const moveUp = document.createElement("button");
+        moveUp.type = "button";
+        moveUp.className = "quiet-button";
+        moveUp.textContent = "↑";
+        moveUp.setAttribute("aria-label", `Move ${homepageFieldLabel(key)} ${index + 1} up`);
+        moveUp.disabled = index === 0;
+        moveUp.addEventListener("click", () => {
+          let target = homepageContent;
+          path.slice(0, -1).forEach((part) => { target = target[part]; });
+          [target[index - 1], target[index]] = [target[index], target[index - 1]];
+          renderHomepageEditor();
+        });
+        const moveDown = document.createElement("button");
+        moveDown.type = "button";
+        moveDown.className = "quiet-button";
+        moveDown.textContent = "↓";
+        moveDown.setAttribute("aria-label", `Move ${homepageFieldLabel(key)} ${index + 1} down`);
+        moveDown.disabled = index === value.length - 1;
+        moveDown.addEventListener("click", () => {
+          let target = homepageContent;
+          path.slice(0, -1).forEach((part) => { target = target[part]; });
+          [target[index], target[index + 1]] = [target[index + 1], target[index]];
+          renderHomepageEditor();
+        });
         const remove = document.createElement("button");
         remove.type = "button";
         remove.className = "quiet-button";
@@ -209,7 +382,8 @@
           target.splice(index, 1);
           renderHomepageEditor();
         });
-        heading.append(itemTitle, remove);
+        actions.append(moveUp, moveDown, remove);
+        heading.append(itemTitle, actions);
         entry.appendChild(heading);
         if (item && typeof item === "object" && !Array.isArray(item)) {
           Object.entries(item).forEach(([childKey, child]) => {
@@ -283,6 +457,7 @@
     const editor = document.getElementById("homepageEditor");
     editor.replaceChildren();
     Object.entries(homepageContent).forEach(([key, value]) => {
+      if (key === "homeLayout") return;
       renderHomepageField(editor, key, value, [key]);
     });
   }
@@ -294,6 +469,7 @@
         body: JSON.stringify({ content: homepageContent })
       });
       homepageContent = result.data;
+      renderHomepageLayoutEditor();
       renderHomepageEditor();
       showMessage(dashboardMessage, "Homepage content saved.", false);
     } catch (error) {

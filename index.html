@@ -95,6 +95,11 @@
     <span class="home-bhoomi-cta">सेवाएँ देखें <b aria-hidden="true">→</b></span>
   </a>
 
+  <section class="home-quick-links container" aria-labelledby="homeQuickLinksTitle">
+    <h2 id="homeQuickLinksTitle">Important Updates</h2>
+    <div class="home-quick-grid" id="homeQuickLinks"></div>
+  </section>
+
   <section class="container layout">
     <aside class="left-sidebar">
       <div class="side-card aadhaar-services-card">
@@ -147,6 +152,21 @@
     </aside>
 
     <section class="content">
+      <section class="home-update-grid" aria-label="Latest results, admit cards and jobs">
+        <article class="home-update-card">
+          <h2 id="homeResultsTitle">Result</h2>
+          <ul id="homeResultsList" class="home-update-list"></ul>
+        </article>
+        <article class="home-update-card">
+          <h2 id="homeAdmitTitle">Admit Card</h2>
+          <ul id="homeAdmitList" class="home-update-list"></ul>
+        </article>
+        <article class="home-update-card">
+          <h2 id="homeJobsTitle">Latest Job</h2>
+          <ul id="homeJobsList" class="home-update-list"></ul>
+        </article>
+      </section>
+
       <div class="card-grid">
         <article class="update-card teal-card rtps-services-card" id="rtps-services">
           <div class="card-head"><span>🏛 RTPS <span class="rtps-title-word">Bihar</span> Services</span></div>
@@ -220,97 +240,37 @@
 
         <article class="update-card blue-card" id="jobs" data-nav-view="jobs">
           <div class="card-head"><span>▣ Latest Jobs</span></div>
-          <ul class="post-list">
-
-           
-            <li><a href="https://ssc.gov.in" target="_blank" rel="noopener noreferrer">SSC CHSL 10+2 Online Form 2026</a></li>
-            <li><a href="https://esb.mp.gov.in" target="_blank" rel="noopener noreferrer">MP Police Constable Driver Online Form 2026 &amp; MP Police GD Constable Correction/Edit Form 2026</a></li>
-            <li><a href="https://sci.gov.in" target="_blank" rel="noopener noreferrer">Supreme Court SCI Junior Court Assistant Online Form 2026</a></li>
-            <li><a href="https://upessc.up.gov.in" target="_blank" rel="noopener noreferrer">UPESSC UP Assistant Professor Online Form 2026</a></li>
-            <li><a href="https://upsssc.gov.in" target="_blank" rel="noopener noreferrer">UPSSSC Junior Engineer JE Agriculture Online Form 2026</a></li>
-            <li><a href="https://gims.ac.in" target="_blank" rel="noopener noreferrer">GIMS Noida Staff Nurse Online Form 2026</a></li>
-            <li><a href="https://joinindianarmy.nic.in" target="_blank" rel="noopener noreferrer">Indian Army 10+2 TES 57th Entry Online Form 2026</a></li>
-            <li><a href="https://mphc.gov.in" target="_blank" rel="noopener noreferrer">MP High Court Stenographer Gr-II, III &amp; AG Gr-III Online Form 2026</a></li>
-            <li><a href="https://joinindiancoastguard.cdac.in" target="_blank" rel="noopener noreferrer">Indian Coast Guard CGEPT 01/2027 &amp; 02/2027 Online Form</a></li>
-            <li><a href="https://dsssbonline.nic.in" target="_blank" rel="noopener noreferrer">DSSSB Delhi District Court Various Post Online Form 2026</a></li>
-            <li><a href="https://www.ibps.in" target="_blank" rel="noopener noreferrer">IBPS RRB XV 15th Scale-I, II, III Correction Form 2026</a></li>
-            <li><a href="https://bpsc.bih.nic.in" target="_blank" rel="noopener noreferrer">BPSC School Teacher TRE 4.0 Online Form 2026</a></li>
-            <li><a href="https://upessc.up.gov.in" target="_blank" rel="noopener noreferrer">UPESSC PRT Assistant Teacher Online Form 2026</a></li>
-            <li><a href="https://iocl.com" target="_blank" rel="noopener noreferrer">IOCL Apprentice Online Form 2026</a></li>
-            <li><a href="https://esb.mp.gov.in" target="_blank" rel="noopener noreferrer">MPESB Group 3 Sub Engineer &amp; Other Post Online Form 2026</a></li>
-            <li><a href="https://rrcjaipur.in" target="_blank" rel="noopener noreferrer">Railway RRC NWR Apprentice Online Form 2026</a></li>
-            <li><a href="https://upsssc.gov.in" target="_blank" rel="noopener noreferrer">UPSSSC Regional Youth Welfare Officer &amp; Sports Directorate Online Form 2026</a></li>
-            <li><a href="https://bseobihar.com" target="_blank" rel="noopener noreferrer">Bihar Library Eligibility Test BLET Online Form 2026</a></li>
-            <li><a href="https://csbc.bihar.gov.in/" target="_blank" rel="noopener noreferrer">Bihar Police Recruitment</a></li>
-            <li><a href="https://indianrailways.gov.in/" target="_blank" rel="noopener noreferrer">Railway Apprentice</a></li>
-            <li>UPSC Civil Services 2025</li>
-            <li>SSC CHSL Recruitment 2025</li>
-            <li>IBPS Clerk Notification 2025</li>
-          </ul>
+          <ul class="post-list"></ul>
           <div class="card-footer"><a class="card-more-link" href="#jobs">View All →</a></div>
         </article>
 
         <article class="update-card green-card" id="results" data-nav-view="results">
           <div class="card-head"><span>▤ Results</span></div>
-          <ul class="post-list">
-            <li>UPSC CSE Prelims Result 2025</li>
-            <li>Bihar Board 12th Result 2025</li>
-            <li>JEE Main Session 2 Result 2025</li>
-            <li>SSC GD Result 2025</li>
-            <li>BPSC 70th Result 2025</li>
-          </ul>
+          <ul class="post-list"></ul>
           <div class="card-footer"><a class="card-more-link" href="#results">View All →</a></div>
         </article>
 
         <article class="update-card orange-card" id="admit" data-nav-view="admit">
           <div class="card-head"><span>🎟 Admit Card</span></div>
-          <ul class="post-list">
-            <li>UPSC CSE Prelims Admit Card 2025</li>
-            <li>Bihar Police Constable Admit Card</li>
-            <li>SSC GD Admit Card 2025</li>
-            <li>Railway RRB NTPC Admit Card</li>
-            <li>BPSC Admit Card 2025</li>
-          </ul>
+          <ul class="post-list"></ul>
           <div class="card-footer"><a class="card-more-link" href="#admit">View All →</a></div>
         </article>
 
         <article class="update-card purple-card" id="admission" data-nav-view="admission">
           <div class="card-head"><span>🎓 Admission</span></div>
-          <ul class="post-list">
-            <li>UG Admission 2025</li>
-            <li>PG Admission 2025</li>
-            <li>ITI Admission 2025</li>
-            <li>Polytechnic Admission 2025</li>
-            <li>University Admission 2025</li>
-            <li><a href="https://ignouadmission.samarth.edu.in/" target="_blank" rel="noopener noreferrer">IGNOU July Admission 2026</a></li>
-            <li><a href="https://ctet.nic.in/" target="_blank" rel="noopener noreferrer">CTET September 2026</a></li>
-            <li><a href="https://lnmu.ac.in/" target="_blank" rel="noopener noreferrer">LNMU UG Admission 2026-30</a></li>
-            <li><a href="https://deb.ugc.ac.in/" target="_blank" rel="noopener noreferrer">UGC ODL Online Application 2026-27</a></li>
-          </ul>
+          <ul class="post-list"></ul>
           <div class="card-footer"><a class="card-more-link" href="#admission">View All →</a></div>
         </article>
 
         <article class="update-card pink-card" id="scholarship" data-nav-view="scholarship">
           <div class="card-head"><span>💰 Scholarship</span></div>
-          <ul class="post-list">
-            <li><a href="https://pmsonline.bih.nic.in/" target="_blank" rel="noopener noreferrer">Post Matric Scholarship 2025</a></li>
-            <li><a href="https://scholarships.gov.in/" target="_blank" rel="noopener noreferrer">PM Yashasvi Scholarship</a></li>
-            <li><a href="https://www.7nishchay-yuvaupmission.bihar.gov.in/" target="_blank" rel="noopener noreferrer">Bihar Student Credit Card</a></li>
-            <li><a href="https://scholarships.gov.in/" target="_blank" rel="noopener noreferrer">National Scholarship Portal</a></li>
-            <li><a href="https://medhasoft.bihar.gov.in/" target="_blank" rel="noopener noreferrer">Medha / Kanya Utthan Yojana</a></li>
-          </ul>
+          <ul class="post-list"></ul>
           <div class="card-footer"><a class="card-more-link" href="#scholarship">View All →</a></div>
         </article>
 
         <article class="update-card teal-card" id="yojana" data-nav-view="yojana">
           <div class="card-head"><span>🏛 Sarkari Yojana</span></div>
-          <ul class="post-list">
-            <li>PM Kisan Samman Nidhi</li>
-            <li>Ayushman Bharat Yojana</li>
-            <li>PM Awas Yojana</li>
-            <li>Ujjwala Yojana</li>
-            <li>Sukanya Samriddhi Yojana</li>
-          </ul>
+          <ul class="post-list"></ul>
           <div class="card-footer"><a class="card-more-link" href="#yojana">View All →</a></div>
         </article>
 
@@ -318,25 +278,13 @@
 
         <article class="update-card blue-card" id="bihar" data-nav-view="bihar">
           <div class="card-head"><span>📰 Bihar News</span></div>
-          <ul class="post-list">
-            <li>Bihar Board Exam 2025 Update</li>
-            <li>Bihar Sarkar New Policy 2025</li>
-            <li>Bihar Panchayat Election 2025</li>
-            <li>Bihar Rojgar Mela 2025</li>
-            <li>Bihar SHS Recruitment 2025</li>
-          </ul>
+          <ul class="post-list"></ul>
           <div class="card-footer"><a class="card-more-link" href="#bihar">View All →</a></div>
         </article>
 
         <article class="update-card red-card" id="career" data-nav-view="career">
           <div class="card-head"><span>🚀 Career Guidance</span></div>
-          <ul class="post-list">
-            <li>Career Options After 10th</li>
-            <li>Career Options After 12th</li>
-            <li>Government Jobs vs. Private Jobs</li>
-            <li>Best Courses After Graduation</li>
-            <li>Competitive Exam Preparation Tips</li>
-          </ul>
+          <ul class="post-list"></ul>
           <div class="card-footer"><a class="card-more-link" href="#career">View All →</a></div>
         </article>
       </div>
@@ -370,11 +318,6 @@
 
       <div class="side-card news-side" data-nav-view="latest-news">
         <div class="side-title">📰 Latest News <span class="new-badge">NEW</span></div>
-        <a href="#">Bihar Police Recruitment 2025 Apply Online <small>28 Sep 2025</small></a>
-        <a href="#">UPSC Prelims Admit Card 2025 <small>27 Sep 2025</small></a>
-        <a href="#">JEE Main Result 2025 <small>25 Sep 2025</small></a>
-        <a href="#">PM Kisan Latest Update <small>24 Sep 2025</small></a>
-        <a href="#">Bihar Board Exam Update <small>22 Sep 2025</small></a>
       </div>
 
       <div class="promo small-promo">

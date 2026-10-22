@@ -142,6 +142,31 @@ function cj_homepage_settings(PDO $db): array
     if (!is_array($content)) {
         throw new RuntimeException('Stored homepage settings are invalid JSON.');
     }
+    $defaults = cj_homepage_defaults();
+    foreach ($defaults as $key => $default) {
+        if (!array_key_exists($key, $content)) {
+            $content[$key] = $default;
+        }
+    }
+    if (!is_array($content['homeLayout'] ?? null)) {
+        $content['homeLayout'] = $defaults['homeLayout'];
+    } else {
+        foreach ($defaults['homeLayout'] as $key => $default) {
+            if (!array_key_exists($key, $content['homeLayout'])) {
+                $content['homeLayout'][$key] = $default;
+            }
+        }
+        foreach (['titles', 'useCustomLists', 'columns'] as $section) {
+            if (!is_array($content['homeLayout'][$section] ?? null)) {
+                $content['homeLayout'][$section] = $defaults['homeLayout'][$section];
+            }
+            foreach ($defaults['homeLayout'][$section] as $key => $default) {
+                if (!array_key_exists($key, $content['homeLayout'][$section])) {
+                    $content['homeLayout'][$section][$key] = $default;
+                }
+            }
+        }
+    }
     if (isset($content['branding']) && is_array($content['branding'])) {
         unset($content['branding']['loginLabel'], $content['branding']['loginUrl']);
     }

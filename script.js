@@ -1,11 +1,4 @@
-const latestPosts = [
-  ["UPSC Civil Services Prelims 2025 – Admit Card Released","28 Sep 2025"],
-  ["Bihar Police Constable Recruitment 2025 – Apply Online","27 Sep 2025"],
-  ["SSC GD Constable Result 2025 – Check Now","26 Sep 2025"],
-  ["JEE Main 2025 Session 2 Result – Download Score Card","25 Sep 2025"],
-  ["PM Kisan 20th Installment – Beneficiary List Released","24 Sep 2025"],
-  ["Bihar Board Exam 2025 – Latest Important Notice","22 Sep 2025"]
-];
+const latestPosts = [];
 
 const latestList = document.getElementById("latestList");
 const searchInput = document.getElementById("searchInput");
@@ -302,6 +295,67 @@ function homepageHref(value, fallback = "#") {
     return href;
   }
   return fallback;
+}
+
+function appendHomeLink(container, item, className) {
+  if (!item || typeof item.title !== "string" || typeof item.url !== "string") return false;
+  const href = homepageHref(item.url, "");
+  if (!href) return false;
+
+  const link = document.createElement("a");
+  link.className = className;
+  link.textContent = item.title;
+  link.href = href;
+  if (/^https:\/\//i.test(href)) {
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+  }
+  container.appendChild(link);
+  return true;
+}
+
+function renderHomeLayout(settings, items = []) {
+  const layout = settings?.homeLayout || {};
+  const titles = layout.titles || {};
+  [
+    ["quickLinks", "homeQuickLinksTitle"],
+    ["results", "homeResultsTitle"],
+    ["admit", "homeAdmitTitle"],
+    ["jobs", "homeJobsTitle"],
+  ].forEach(([key, elementId]) => {
+    const heading = document.getElementById(elementId);
+    if (heading && typeof titles[key] === "string") heading.textContent = titles[key];
+  });
+  const quickLinksRoot = document.getElementById("homeQuickLinks");
+  const quickLinks = layout.quickLinks;
+  if (quickLinksRoot && Array.isArray(quickLinks)) {
+    quickLinksRoot.replaceChildren();
+    quickLinks.forEach((item, index) => {
+      appendHomeLink(quickLinksRoot, item, `home-quick-link tone-${index % 8}`);
+    });
+  }
+
+  const columns = layout.columns || {};
+  const useCustomLists = layout.useCustomLists || {};
+  [
+    ["results", "results"],
+    ["admit", "admit"],
+    ["jobs", "jobs"],
+  ].forEach(([key, categoryId]) => {
+    const list = document.getElementById(`home${key[0].toUpperCase()}${key.slice(1)}List`);
+    if (!list) return;
+    list.replaceChildren();
+    const customItems = Array.isArray(columns[key]) ? columns[key] : [];
+    const categoryItems = items.filter((item) => item.categoryId === categoryId);
+    const sourceItems = useCustomLists[key] === true
+      ? customItems
+      : categoryItems.slice(0, 12);
+    sourceItems.forEach((item) => {
+      const entry = document.createElement("li");
+      if (!appendHomeLink(entry, item, "home-update-link")) return;
+      list.appendChild(entry);
+    });
+  });
 }
 
 function renderHomepageLinks(container, links, className = "") {
@@ -874,6 +928,7 @@ async function loadManagedSiteContent() {
       if (staleCard) staleCard.hidden = true;
     });
     applyHomepageContent(settings);
+    renderHomeLayout(settings, items);
 
     renderManagedNavigation(categories, pages || []);
     applyManagedPages(pages || []);
@@ -1236,6 +1291,7 @@ document.addEventListener("click", (event) => {
 
 renderPosts();
 setNavigationView(window.location.hash.slice(1));
+renderHomeLayout({ homeLayout: { columns: {} } });
 loadManagedSiteContent();
 
 let bhoomiServices = [

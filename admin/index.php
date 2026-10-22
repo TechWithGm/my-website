@@ -124,7 +124,8 @@ header('Cache-Control: no-store');
         <div class="panel-heading">
           <div><p class="eyebrow">SITE CONTENT</p><h1>Homepage</h1></div>
         </div>
-        <p class="muted">Edit the homepage text, links, promotions, service lists, sidebar and footer below. Article lists and category cards are managed in their own sections.</p>
+        <p class="muted">Manage the top colorful quick-link buttons and the Result, Admit Card, and Latest Job lists here. Add, edit, remove, or reorder links, then select Save homepage. These link lists start empty.</p>
+        <div id="homeLayoutEditor" class="homepage-link-editor"></div>
         <div class="homepage-editor" id="homepageEditor"></div>
         <div class="form-actions"><button class="primary-button" id="saveHomepageButton" type="button">Save homepage</button></div>
       </section>

@@ -238,6 +238,47 @@ body[data-nav-view="home"] .card-grid>.update-card[data-nav-view]{display:flex;f
   .footer-grid{grid-template-columns:1fr}.copyright .container{display:block}.copyright span{display:block;margin:3px 0}
 }
 
+body[data-nav-view="home"] .hero,
+body[data-nav-view="home"] .home-bhoomi-card,
+body[data-nav-view="home"] .left-sidebar,
+body[data-nav-view="home"] .right-sidebar,
+body[data-nav-view="home"] .content>.about{display:none}
+body[data-nav-view="home"] .layout{grid-template-columns:minmax(0,1fr);margin-top:14px}
+body[data-nav-view="home"] .content>.card-grid{display:none}
+body[data-nav-view]:not([data-nav-view="home"]) .home-quick-links,
+body[data-nav-view]:not([data-nav-view="home"]) .home-update-grid{display:none}
+.home-quick-links{margin-top:18px}
+.home-quick-links>h2{margin-bottom:10px;color:#173650;font-size:18px}
+.home-quick-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}
+.home-quick-link{display:flex;min-height:46px;align-items:center;justify-content:center;padding:9px 12px;border:1px solid transparent;border-radius:4px;color:#fff;font-size:13px;font-weight:700;line-height:1.35;text-align:center;transition:filter .15s ease,transform .15s ease}
+.home-quick-link:hover{filter:brightness(.92);transform:translateY(-1px)}
+.home-quick-link:focus-visible,.home-update-link:focus-visible{outline:3px solid #ffd51c;outline-offset:2px}
+.home-quick-link.tone-0{background:#d63b3b}
+.home-quick-link.tone-1{background:#128065}
+.home-quick-link.tone-2{background:#1769ad}
+.home-quick-link.tone-3{background:#a8581b}
+.home-quick-link.tone-4{background:#7045a3}
+.home-quick-link.tone-5{background:#2d7185}
+.home-quick-link.tone-6{background:#ab3b63}
+.home-quick-link.tone-7{background:#52677c}
+.home-update-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-items:start;gap:14px}
+.home-update-card{min-width:0;overflow:hidden;border:1px solid #d7e0e8;border-radius:4px;background:#fff}
+.home-update-card>h2{padding:9px 12px;background:#c82333;color:#fff;font-size:16px;font-weight:800}
+.home-update-list{padding:6px 14px 10px 30px;list-style:disc}
+.home-update-list:empty{display:none}
+.home-update-list>li{padding:8px 0;border-bottom:1px solid #e7edf2;color:#1260a5;font-size:13px;line-height:1.45}
+.home-update-list>li:last-child{border-bottom:0}
+.home-update-link{color:#1260a5;text-decoration:none}
+.home-update-link:hover{text-decoration:underline}
+@media(max-width:760px){
+  .home-quick-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .home-update-grid{grid-template-columns:1fr}
+}
+@media(max-width:420px){
+  .home-quick-grid{gap:7px}
+  .home-quick-link{min-height:44px;padding:8px;font-size:12px}
+}
+
 body[data-nav-view]:not([data-nav-view="home"]) .home-bhoomi-card{display:none}
 body[data-nav-view="bihar-bhoomi"] .layout{display:none}
 body[data-nav-view="bihar-bhoomi"] .bhoomi-page{display:block}

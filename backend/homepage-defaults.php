@@ -49,6 +49,25 @@ function cj_homepage_defaults(): array
             'buttonLabel' => 'सेवाएँ देखें',
             'url' => '#bihar-bhoomi',
         ],
+        'homeLayout' => [
+            'titles' => [
+                'quickLinks' => 'Important Updates',
+                'results' => 'Result',
+                'admit' => 'Admit Card',
+                'jobs' => 'Latest Job',
+            ],
+            'quickLinks' => [],
+            'useCustomLists' => [
+                'results' => true,
+                'admit' => true,
+                'jobs' => true,
+            ],
+            'columns' => [
+                'results' => [],
+                'admit' => [],
+                'jobs' => [],
+            ],
+        ],
         'aadhaarServices' => [
             'title' => 'आधार कार्ड सेवाएं',
             'items' => [
@@ -207,13 +226,7 @@ function cj_homepage_defaults(): array
         ],
         'rightSidebar' => [
             'latestNewsTitle' => '📰 Latest News',
-            'latestNews' => [
-                ['title' => 'Bihar Police Recruitment 2025 Apply Online', 'displayDate' => '28 Sep 2025', 'url' => '#jobs'],
-                ['title' => 'UPSC Prelims Admit Card 2025', 'displayDate' => '27 Sep 2025', 'url' => '#admit'],
-                ['title' => 'JEE Main Result 2025', 'displayDate' => '25 Sep 2025', 'url' => '#results'],
-                ['title' => 'PM Kisan Latest Update', 'displayDate' => '24 Sep 2025', 'url' => '#yojana'],
-                ['title' => 'Bihar Board Exam Update', 'displayDate' => '22 Sep 2025', 'url' => '#results'],
-            ],
+            'latestNews' => [],
             'importantLinksTitle' => '🔗 Important Links',
             'importantLinks' => [
                 ['title' => 'UPSC Official Website', 'url' => 'https://upsc.gov.in/'],
