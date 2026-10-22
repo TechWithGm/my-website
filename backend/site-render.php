@@ -24,7 +24,6 @@ function cj_site_header(array $categories = []): void
         <div class="header-right">
           <div class="header-actions">
             <div class="mini-links"><span>सही जानकारी</span><span>|</span><span>समय पर अपडेट</span><span>|</span><span>आपके लिए</span></div>
-            <a class="header-login-btn" href="/customer-portal/">Customer Login</a>
           </div>
           <div class="search">
             <input id="searchInput" type="search" placeholder="Search Jobs, Results, Admit Card, Scheme..." aria-label="Search this website" autocomplete="off" aria-controls="searchResults">
@@ -61,7 +60,6 @@ function cj_site_header(array $categories = []): void
                   <a href="/category/<?= cj_h(rawurlencode($category['slug'])) ?>/"><?= cj_h($category['name']) ?></a>
                 <?php endif; ?>
               <?php endforeach; ?>
-              <a href="/customer-portal/">Customer Login</a>
             </div>
           </div>
         </div>
@@ -79,7 +77,7 @@ function cj_site_footer(): void
           <img class="brand-logo" src="/Untitled-1%20copy.jpg" alt="Cyber Junction Logo">
           <div><h2>CYBER JUNCTION</h2><p>Latest Government Updates</p></div>
         </div>
-        <div><h3>Quick Links</h3><a href="/index.html#home">Home</a><a href="/customer-portal/">Customer Login</a><a href="/index.html#about-us">About Us</a><a href="/index.html#contact-us">Contact Us</a><a href="/index.html#terms-and-conditions">Terms &amp; Conditions</a></div>
+        <div><h3>Quick Links</h3><a href="/index.html#home">Home</a><a href="/index.html#about-us">About Us</a><a href="/index.html#contact-us">Contact Us</a><a href="/index.html#terms-and-conditions">Terms &amp; Conditions</a></div>
         <div><h3>Important Pages</h3><a href="/index.html#jobs">Latest Jobs</a><a href="/index.html#results">Results</a><a href="/index.html#admit">Admit Card</a><a href="/index.html#admission">Admission</a><a href="/index.html#scholarship">Scholarship</a></div>
         <div>
           <h3>Social Media</h3>

@@ -9,6 +9,7 @@ header("Content-Security-Policy: default-src 'none'; frame-ancestors 'none'; bas
 
 try {
     require_once __DIR__ . '/backend/bootstrap.php';
+    require_once __DIR__ . '/backend/homepage-defaults.php';
 } catch (Throwable $error) {
     error_log('Cyber Junction API bootstrap error: ' . $error->getMessage());
     http_response_code(500);
@@ -127,14 +128,105 @@ function cj_public_content(PDO $db): array
         'categories' => $categories,
         'items' => $items,
         'pages' => [],
-        'settings' => [
-            'heroTitle' => 'सरकारी सेवाएं',
-            'heroSubtitle' => 'Latest Government Job Updates',
-            'heroButtonLabel' => 'View Latest Jobs →',
-            'heroButtonUrl' => '#jobs',
-            'aboutIntro' => '',
-        ],
+        'settings' => cj_homepage_settings($db),
     ];
+}
+
+function cj_homepage_settings(PDO $db): array
+{
+    $stored = $db->query('SELECT content FROM homepage_settings WHERE id = 1')->fetchColumn();
+    if ($stored === false) {
+        return cj_homepage_defaults();
+    }
+    $content = json_decode((string) $stored, true);
+    if (!is_array($content)) {
+        throw new RuntimeException('Stored homepage settings are invalid JSON.');
+    }
+    if (isset($content['branding']) && is_array($content['branding'])) {
+        unset($content['branding']['loginLabel'], $content['branding']['loginUrl']);
+    }
+    if (isset($content['hero']) && is_array($content['hero'])) {
+        unset($content['hero']['loginLabel']);
+    }
+    foreach (['footer' => 'quickLinks', 'navigation' => 'moreLinks'] as $section => $field) {
+        if (!isset($content[$section][$field]) || !is_array($content[$section][$field])) {
+            continue;
+        }
+        $content[$section][$field] = array_values(array_filter(
+            $content[$section][$field],
+            static function (mixed $item): bool {
+                if (!is_array($item)) {
+                    return true;
+                }
+                $title = strtolower(trim((string) ($item['title'] ?? '')));
+                $url = trim((string) ($item['url'] ?? ''));
+                return $title !== 'customer login'
+                    && !preg_match('~^/customer-portal(?:/|$)~i', $url);
+            }
+        ));
+    }
+    return $content;
+}
+
+function cj_validate_homepage_value(mixed $value, int $depth = 0): mixed
+{
+    if ($depth > 12) {
+        cj_send_json(['error' => 'Homepage content is nested too deeply.'], 422);
+    }
+    if (is_string($value)) {
+        if (strlen($value) > 10000 || !mb_check_encoding($value, 'UTF-8')) {
+            cj_send_json(['error' => 'Homepage text must be valid UTF-8 and no longer than 10,000 bytes per field.'], 422);
+        }
+        return $value;
+    }
+    if (is_bool($value) || is_int($value) || is_float($value) || $value === null) {
+        return $value;
+    }
+    if (!is_array($value) || count($value) > 500) {
+        cj_send_json(['error' => 'Homepage content contains an unsupported value or too many items.'], 422);
+    }
+    $validated = [];
+    foreach ($value as $key => $item) {
+        if (is_string($key) && (
+            strlen($key) > 80
+            || !preg_match('/^[A-Za-z0-9_-]+$/', $key)
+            || in_array($key, ['__proto__', 'prototype', 'constructor'], true)
+        )) {
+            cj_send_json(['error' => 'Homepage content contains an invalid field name.'], 422);
+        }
+        $validated[$key] = cj_validate_homepage_value($item, $depth + 1);
+    }
+    return $validated;
+}
+
+function cj_admin_homepage(PDO $db, string $method): never
+{
+    cj_require_admin();
+    if ($method === 'GET') {
+        cj_send_json(['data' => cj_homepage_settings($db)]);
+    }
+    if ($method === 'PUT') {
+        $input = cj_json_input();
+        if (!isset($input['content']) || !is_array($input['content'])) {
+            cj_send_json(['error' => 'Homepage content must be a JSON object.'], 422);
+        }
+        $content = cj_validate_homepage_value($input['content']);
+        try {
+            $encoded = json_encode($content, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        } catch (JsonException $error) {
+            cj_send_json(['error' => 'Homepage content could not be encoded.'], 422);
+        }
+        if (strlen($encoded) > 1000000) {
+            cj_send_json(['error' => 'Homepage content must be no larger than 1 MB.'], 422);
+        }
+        $stmt = $db->prepare(
+            'INSERT INTO homepage_settings (id, content) VALUES (1, CAST(? AS JSONB))
+             ON CONFLICT (id) DO UPDATE SET content = EXCLUDED.content'
+        );
+        $stmt->execute([$encoded]);
+        cj_send_json(['data' => $content]);
+    }
+    cj_send_json(['error' => 'Method not allowed.'], 405);
 }
 
 function cj_require_csrf_for_login(): void
@@ -537,6 +629,9 @@ function cj_admin_dispatch(PDO $db, array $segments): never
 
     if ($resource === 'categories') {
         cj_admin_categories($db, $method, $identifier);
+    }
+    if ($resource === 'homepage' && $identifier === null) {
+        cj_admin_homepage($db, $method);
     }
     if ($resource === 'latest-updates') {
         $id = $identifier === null ? null : filter_var($identifier, FILTER_VALIDATE_INT);

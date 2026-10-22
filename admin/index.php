@@ -13,7 +13,7 @@ header('Cache-Control: no-store');
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="noindex,nofollow">
-  <title>Article Manager | Cyber Junction</title>
+  <title>Admin Dashboard | Cyber Junction</title>
   <link rel="stylesheet" href="/admin/admin.css">
   <script src="/admin/admin.js" defer></script>
 </head>
@@ -21,9 +21,9 @@ header('Cache-Control: no-store');
   <main class="admin-shell">
     <section class="auth-card" id="authPanel" aria-labelledby="adminTitle">
       <a class="admin-brand" href="/">CYBER <span>JUNCTION</span></a>
-      <p class="eyebrow">CONTENT MANAGEMENT</p>
+      <p class="eyebrow">CYBER JUNCTION · CONTROL PANEL</p>
       <h1 id="adminTitle">Admin sign in</h1>
-      <p class="muted">Manage published articles, categories and latest updates.</p>
+      <p class="muted">Sign in to manage your website, homepage content, articles and updates.</p>
       <form id="loginForm" class="stack-form">
         <label>Email<input name="email" type="email" autocomplete="username" required maxlength="254"></label>
         <label>Password<input name="password" type="password" autocomplete="current-password" required maxlength="200"></label>
@@ -52,6 +52,7 @@ header('Cache-Control: no-store');
         <button class="tab-button active" type="button" data-panel="articlesPanel">Articles</button>
         <button class="tab-button" type="button" data-panel="updatesPanel">Latest Updates</button>
         <button class="tab-button" type="button" data-panel="categoriesPanel">Categories</button>
+        <button class="tab-button" type="button" data-panel="homepagePanel">Homepage</button>
       </nav>
       <p class="notice" id="dashboardMessage" role="status" aria-live="polite"></p>
 
@@ -117,6 +118,15 @@ header('Cache-Control: no-store');
           </div>
           <div class="form-actions"><button class="primary-button" type="submit">Save category</button><button class="quiet-button" id="cancelCategoryButton" type="button">Cancel</button></div>
         </form>
+      </section>
+
+      <section class="manager-panel" id="homepagePanel" hidden>
+        <div class="panel-heading">
+          <div><p class="eyebrow">SITE CONTENT</p><h1>Homepage</h1></div>
+        </div>
+        <p class="muted">Edit the homepage text, links, promotions, service lists, sidebar and footer below. Article lists and category cards are managed in their own sections.</p>
+        <div class="homepage-editor" id="homepageEditor"></div>
+        <div class="form-actions"><button class="primary-button" id="saveHomepageButton" type="button">Save homepage</button></div>
       </section>
     </section>
   </main>

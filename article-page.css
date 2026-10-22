@@ -69,3 +69,164 @@
 .not-found-card a{display:inline-block;margin-top:10px;padding:10px 16px;border-radius:6px;background:#0877e8;color:#fff}
 @media(max-width:850px){.article-layout{grid-template-columns:1fr}.article-sidebar{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:600px){.public-page{width:94%;margin-top:12px}.article-toc ol{columns:1}.article-sidebar{grid-template-columns:1fr}.public-article-grid{grid-template-columns:1fr}.article-pagination{grid-template-columns:1fr}.article-pagination a:last-child{text-align:left}.public-card-image{width:96px}.public-card-copy{padding:10px}.article-title{font-size:25px}}
+
+.article-body{
+  border-color:#e4e6dd;
+  border-radius:12px;
+  background:linear-gradient(145deg,#fff 0%,#fffefa 100%);
+  box-shadow:0 8px 28px rgba(36,48,37,.07);
+}
+.article-category{
+  padding:5px 10px;
+  border:1px solid #ead9b5;
+  border-radius:999px;
+  background:#fbf6e9;
+  color:#87672b;
+  letter-spacing:.08em;
+}
+.article-title{
+  margin:14px 0 10px;
+  color:#1b3340;
+  font-family:Georgia,"Times New Roman",serif;
+  font-weight:700;
+  letter-spacing:-.025em;
+}
+.article-meta{color:#758087}
+.article-byline{
+  border-top-color:#ece9df;
+  border-bottom-color:#ece9df;
+}
+.article-author-icon{
+  background:linear-gradient(145deg,#1c7772,#204b58);
+  box-shadow:0 3px 9px #1c77722c;
+}
+.article-intro{
+  color:#465d63;
+  font-size:16px;
+  line-height:1.9;
+}
+.article-toc{
+  border-color:#e8e4d8;
+  background:linear-gradient(145deg,#fbfaf5,#f7f8f3);
+}
+.article-toc h2,.article-related h2,.article-pagination h2{
+  color:#243e49;
+  font-family:Georgia,"Times New Roman",serif;
+}
+.article-section{
+  margin-top:28px;
+  padding-top:22px;
+  border-top:1px solid #e9e7df;
+}
+.article-section h2{
+  position:relative;
+  margin:0 0 16px;
+  padding:0 0 12px;
+  border:0;
+  color:#203a47;
+  font-family:Georgia,"Times New Roman",serif;
+  font-size:clamp(19px,2.2vw,22px);
+  line-height:1.4;
+}
+.article-section h2::after{
+  position:absolute;
+  right:0;
+  bottom:0;
+  left:0;
+  height:1px;
+  background:linear-gradient(90deg,#c9a75e 0,#dfd7c3 22%,#eeece5 72%,transparent 100%);
+  content:"";
+}
+.article-section h2::before{
+  position:absolute;
+  bottom:-2px;
+  left:0;
+  z-index:1;
+  width:34px;
+  height:3px;
+  border-radius:3px;
+  background:#b8944e;
+  content:"";
+}
+.article-section p,.article-section li{
+  color:#40545c;
+  font-size:14px;
+  line-height:1.9;
+}
+.article-section p{margin:11px 0}
+.article-section li{margin:7px 0}
+.article-table-wrap{
+  border-color:#e4e5dd;
+  border-radius:8px;
+}
+.article-table-wrap th,.article-table-wrap td{
+  border-bottom-color:#ecece5;
+}
+.article-table-wrap th{
+  width:38%;
+  background:#f8f6ef;
+  color:#354d54;
+  font-weight:700;
+}
+.article-table-wrap tr:nth-child(even) td{background:#fcfcf9}
+.article-table-wrap tr:last-child th,.article-table-wrap tr:last-child td{border-bottom:0}
+.article-links a{
+  border-color:#e8e6dc;
+  background:#fcfbf7;
+  color:#285760;
+  transition:border-color .16s ease,background .16s ease,transform .16s ease;
+}
+.article-links a:hover{
+  transform:translateY(-1px);
+  border-color:#c9b47f;
+  background:#f8f5eb;
+}
+.article-links a span{color:#8c7138}
+.article-faq details{
+  border-color:#e6e6df;
+  background:#fffefa;
+}
+.article-faq summary{
+  color:#2e4851;
+  line-height:1.6;
+}
+.article-faq details[open]{border-color:#d8cfb6}
+.article-faq details p{padding-top:10px;border-top:1px solid #eeece5}
+.article-disclaimer{
+  border:1px solid #e8e3d6;
+  background:#f8f7f1;
+  color:#606c69;
+}
+.article-related,.article-pagination{padding-top:22px;border-top:1px solid #e9e7df}
+.public-article-card{
+  border-color:#e5e8e1;
+  border-radius:10px;
+  box-shadow:0 4px 14px rgba(35,53,44,.06);
+  transition:transform .18s ease,box-shadow .18s ease;
+}
+.public-article-card:hover{
+  transform:translateY(-2px);
+  box-shadow:0 9px 22px rgba(35,53,44,.1);
+}
+.article-pagination a{
+  border-color:#e5e5dc;
+  border-radius:8px;
+  background:#fffefa;
+  color:#31555e;
+}
+.public-card-copy h2{font-family:Georgia,"Times New Roman",serif}
+.public-aside-card{
+  border-color:#e4e6dd;
+  border-radius:10px;
+}
+.public-aside-card h2{
+  border-bottom:1px solid #e6e2d6;
+  color:#29444d;
+  font-family:Georgia,"Times New Roman",serif;
+}
+.public-aside-card>a{border-bottom-color:#eeeee8}
+@media(max-width:600px){
+  .article-section{margin-top:23px;padding-top:18px}
+  .article-section h2{margin-bottom:13px;padding-bottom:10px}
+  .article-table-wrap th{width:42%}
+}

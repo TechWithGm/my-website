@@ -25,18 +25,6 @@ const knownSiteCategoryIds = new Set([
   "bihar", "career", "latest-news", "important-links", "popular-searches"
 ]);
 
-function fixPortalLinks() {
-  const portalUrl = window.location.protocol === "file:"
-    ? "http://localhost:5000/customer-portal/"
-    : "/customer-portal/";
-
-  document.querySelectorAll("[data-portal-link]").forEach((link) => {
-    link.href = portalUrl;
-  });
-}
-
-fixPortalLinks();
-
 async function submitContactForm(event) {
   event.preventDefault();
 
@@ -153,12 +141,15 @@ function renderManagedCategory(category, items) {
     heading.className = "card-head";
     const title = document.createElement("span");
     heading.appendChild(title);
+    const footer = document.createElement("div");
+    footer.className = "card-footer";
     const viewAll = document.createElement("a");
+    viewAll.className = "card-more-link";
     viewAll.textContent = "View All →";
-    heading.appendChild(viewAll);
+    footer.appendChild(viewAll);
     const list = document.createElement("ul");
     list.className = "post-list";
-    card.append(heading, list);
+    card.append(heading, list, footer);
     cardGrid.appendChild(card);
   }
   if (card) {
@@ -174,7 +165,7 @@ function renderManagedCategory(category, items) {
   if (container.classList.contains("post-list")) {
     const title = card.querySelector(".card-head span");
     if (title) title.textContent = `${category.icon} ${category.name}`;
-    const viewAll = card.querySelector(".card-head a");
+    const viewAll = card.querySelector(".card-footer a");
     if (viewAll && category.url) {
       viewAll.href = category.url;
       viewAll.textContent = "View All →";
@@ -303,6 +294,564 @@ function applyManagedPages(pages) {
   });
 }
 
+function homepageHref(value, fallback = "#") {
+  if (typeof value !== "string") return fallback;
+  const href = value.trim();
+  if (/^https:\/\//i.test(href) || /^mailto:[^\s]+$/i.test(href)
+    || /^\/(?!\/)/.test(href) || /^#[a-z0-9_-]+$/i.test(href)) {
+    return href;
+  }
+  return fallback;
+}
+
+function renderHomepageLinks(container, links, className = "") {
+  if (!container || !Array.isArray(links)) return;
+  const heading = container.querySelector(":scope > .side-title");
+  container.replaceChildren();
+  if (heading) container.appendChild(heading);
+  links.forEach((item) => {
+    if (!item || typeof item.title !== "string") return;
+    if (item.title.trim().toLowerCase() === "customer login"
+      || (typeof item.url === "string" && /^\/customer-portal(?:\/|$)/i.test(item.url.trim()))) return;
+    const href = homepageHref(item.url, "");
+    const link = document.createElement(href ? "a" : "span");
+    link.textContent = item.title;
+    if (href) link.href = href;
+    if (className) link.className = className;
+    if (href && /^https:\/\//i.test(link.href)) {
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+    }
+    if (container.tagName === "UL") {
+      const entry = document.createElement("li");
+      entry.appendChild(link);
+      container.appendChild(entry);
+    } else {
+      container.appendChild(link);
+    }
+  });
+}
+
+function renderHomepageSocials(container, links) {
+  if (!container || !Array.isArray(links)) return;
+  container.replaceChildren();
+  links.forEach((item) => {
+    if (!item || typeof item.label !== "string") return;
+    const href = homepageHref(item.url, "");
+    const link = document.createElement(href ? "a" : "span");
+    const network = item.label.toLocaleLowerCase().replace(/[^a-z0-9]+/g, "");
+    link.className = `social-link ${network}`;
+    link.setAttribute("aria-label", item.label);
+    link.title = item.label;
+    link.textContent = item.label.slice(0, 1).toLocaleUpperCase();
+    if (href) link.href = href;
+    if (href && /^https:\/\//i.test(link.href)) {
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+    }
+    container.appendChild(link);
+  });
+}
+
+function applyHomepageContent(settings) {
+  if (!settings || typeof settings !== "object") return;
+  const branding = settings.branding || {};
+  document.querySelectorAll(".brand h1, .footer-brand h2").forEach((element) => {
+    const name = typeof branding.name === "string" ? branding.name.trim() : "";
+    if (!name) return;
+    const words = name.split(/\s+/);
+    element.replaceChildren(document.createTextNode(`${words.slice(0, -1).join(" ")} `));
+    const accent = document.createElement("span");
+    accent.textContent = words[words.length - 1];
+    element.appendChild(accent);
+  });
+  document.querySelectorAll(".brand p, .footer-brand p").forEach((element) => {
+    if (typeof branding.tagline === "string") element.textContent = branding.tagline;
+  });
+  if (typeof branding.pageTitle === "string") document.title = branding.pageTitle;
+  const metaDescription = document.querySelector('meta[name="description"]');
+  if (metaDescription && typeof branding.metaDescription === "string") {
+    metaDescription.content = branding.metaDescription;
+  }
+  document.querySelectorAll(".brand-logo").forEach((image) => {
+    image.src = homepageHref(branding.logoUrl, image.getAttribute("src"));
+    if (typeof branding.logoAlt === "string") image.alt = branding.logoAlt;
+  });
+  const miniLinks = document.querySelector(".mini-links");
+  if (miniLinks && Array.isArray(branding.highlights)) {
+    miniLinks.replaceChildren();
+    branding.highlights.forEach((text, index) => {
+      if (typeof text !== "string") return;
+      if (index) {
+        const separator = document.createElement("span");
+        separator.textContent = "|";
+        miniLinks.appendChild(separator);
+      }
+      const item = document.createElement("span");
+      item.textContent = text;
+      miniLinks.appendChild(item);
+    });
+  }
+  const navigation = settings.navigation || {};
+  const searchInput = document.getElementById("searchInput");
+  const searchButton = document.getElementById("searchBtn");
+  const menuButton = document.getElementById("menuBtn");
+  const homeLink = document.querySelector(".nav-inner [data-nav-view='home']");
+  const bhoomiNavLink = document.querySelector(".nav-inner [data-nav-view='bihar-bhoomi']");
+  const moreToggle = document.getElementById("moreToggle");
+  if (searchInput) {
+    if (typeof navigation.searchPlaceholder === "string") searchInput.placeholder = navigation.searchPlaceholder;
+    if (typeof navigation.searchLabel === "string") searchInput.setAttribute("aria-label", navigation.searchLabel);
+  }
+  if (searchButton) {
+    if (typeof navigation.searchButtonLabel === "string") searchButton.textContent = navigation.searchButtonLabel;
+    if (typeof navigation.searchLabel === "string") searchButton.setAttribute("aria-label", navigation.searchLabel);
+  }
+  if (menuButton && typeof navigation.menuLabel === "string") menuButton.setAttribute("aria-label", navigation.menuLabel);
+  if (homeLink) {
+    if (typeof navigation.homeLabel === "string") homeLink.textContent = navigation.homeLabel;
+    homeLink.href = homepageHref(navigation.homeUrl, homeLink.href);
+  }
+  if (bhoomiNavLink) {
+    if (typeof navigation.bhoomiLabel === "string") bhoomiNavLink.textContent = navigation.bhoomiLabel;
+    bhoomiNavLink.href = homepageHref(navigation.bhoomiUrl, bhoomiNavLink.href);
+  }
+  if (moreToggle && typeof navigation.moreLabel === "string") moreToggle.textContent = navigation.moreLabel;
+  if (Array.isArray(navigation.moreLinks)) {
+    navigation.moreLinks.forEach((item) => {
+      if (!item || typeof item.view !== "string") return;
+      const link = Array.from(document.querySelectorAll(".more-menu [data-nav-view]"))
+        .find((candidate) => candidate.dataset.navView === item.view);
+      if (!link) return;
+      if (typeof item.title === "string") link.textContent = item.title;
+      link.href = homepageHref(item.url, link.href);
+    });
+  }
+
+  const hero = settings.hero || {};
+  const heroRoot = document.querySelector(".hero-blue");
+  if (heroRoot) {
+    const eyebrow = heroRoot.querySelector(".eyebrow");
+    const title = heroRoot.querySelector("h2");
+    const subtitle = heroRoot.querySelector("p");
+    const button = heroRoot.querySelector(".yellow-btn");
+    if (eyebrow && typeof hero.eyebrow === "string") eyebrow.textContent = hero.eyebrow;
+    if (title && typeof hero.title === "string") title.textContent = hero.title;
+    if (subtitle && typeof hero.subtitle === "string") subtitle.textContent = hero.subtitle;
+    if (button) {
+      if (typeof hero.buttonLabel === "string") button.textContent = hero.buttonLabel;
+      button.href = homepageHref(hero.buttonUrl);
+    }
+  }
+  const heroInfo = document.querySelector(".hero-info");
+  if (heroInfo && Array.isArray(hero.trustPoints)) {
+    heroInfo.querySelectorAll("p").forEach((paragraph, index) => {
+      paragraph.hidden = typeof hero.trustPoints[index] !== "string";
+      if (!paragraph.hidden) paragraph.textContent = `✓ ${hero.trustPoints[index]}`;
+    });
+  }
+
+  const bhoomiCard = settings.biharBhoomiCard || {};
+  const bhoomiRoot = document.querySelector(".home-bhoomi-card");
+  if (bhoomiRoot) {
+    const badge = bhoomiRoot.querySelector(".new-badge");
+    const title = bhoomiRoot.querySelector(".home-bhoomi-copy strong");
+    const description = bhoomiRoot.querySelector(".home-bhoomi-copy > span");
+    const button = bhoomiRoot.querySelector(".home-bhoomi-cta");
+    if (badge && typeof bhoomiCard.badge === "string") badge.textContent = bhoomiCard.badge;
+    if (title && typeof bhoomiCard.title === "string") title.textContent = bhoomiCard.title;
+    if (description && typeof bhoomiCard.description === "string") description.textContent = bhoomiCard.description;
+    bhoomiRoot.href = homepageHref(bhoomiCard.url, "#bihar-bhoomi");
+    if (button && typeof bhoomiCard.buttonLabel === "string") {
+      button.replaceChildren(document.createTextNode(bhoomiCard.buttonLabel));
+      const arrow = document.createElement("b");
+      arrow.setAttribute("aria-hidden", "true");
+      arrow.textContent = "→";
+      button.appendChild(arrow);
+    }
+  }
+
+  const aadhaar = settings.aadhaarServices || {};
+  const aadhaarRoot = document.querySelector(".aadhaar-services-card");
+  if (aadhaarRoot) {
+    const title = aadhaarRoot.querySelector(".side-title");
+    if (title && typeof aadhaar.title === "string") title.textContent = aadhaar.title;
+    renderHomepageLinks(aadhaarRoot.querySelector(".post-list"), aadhaar.items);
+  }
+
+  const promos = Array.isArray(settings.promos) ? settings.promos : [];
+  [document.querySelector(".left-sidebar .promo"), document.querySelector(".right-sidebar .promo")]
+    .forEach((promo, index) => {
+      const content = promos[index];
+      if (!promo || !content) return;
+      const icon = promo.querySelector(".promo-icon");
+      const title = promo.querySelector("h3");
+      const button = promo.querySelector(".yellow-btn");
+      if (icon && typeof content.icon === "string") icon.textContent = content.icon;
+      if (title && typeof content.title === "string") title.textContent = content.title;
+      if (button) {
+        if (typeof content.buttonLabel === "string") button.textContent = content.buttonLabel;
+        button.href = homepageHref(content.buttonUrl);
+      }
+    });
+
+  const socials = settings.socialLinks;
+  renderHomepageSocials(document.querySelector(".left-sidebar .socials"), socials);
+  const footerSocials = settings.footer?.socialLinks || socials;
+  renderHomepageSocials(document.querySelector(".footer-socials"), footerSocials);
+
+  const rtps = settings.rtps || {};
+  const rtpsRoot = document.querySelector(".rtps-services-card");
+  if (rtpsRoot) {
+    const title = rtpsRoot.querySelector(".card-head > span");
+    if (title && typeof rtps.title === "string") title.textContent = rtps.title;
+    const list = rtpsRoot.querySelector(":scope > .post-list");
+    if (list && Array.isArray(rtps.services)) {
+      const legacyIds = ["caste", "residential", "income", "conduct", "ncl", "track", "download"];
+      const legacyServices = Array.from(list.children, (entry, index) => {
+        const label = entry.querySelector(".certificate-service-toggle, a") || entry;
+        return {
+          id: entry.dataset.legacyId || entry.dataset.certificateId || legacyIds[index],
+          title: label.textContent.trim(),
+          links: Array.from(entry.querySelectorAll("a"), (link) => link.href),
+        };
+      });
+      const legacyOffsets = new Map();
+      const getLegacyService = (service) => {
+        const id = typeof service.id === "string" && service.id.startsWith("ncl-") ? "ncl" : service.id;
+        return legacyServices.find((legacy) => legacy.id === id)
+          || legacyServices.find((legacy) => legacy.title === service.title);
+      };
+      list.replaceChildren();
+      rtps.services.forEach((service, index) => {
+        if (!service || typeof service.title !== "string") return;
+        const entry = document.createElement("li");
+        if (typeof service.id === "string") {
+          entry.dataset.certificateId = service.id;
+          entry.dataset.legacyId = service.id.startsWith("ncl-") ? "ncl" : service.id;
+        }
+        const options = Array.isArray(service.options) ? service.options : [];
+        const legacyService = getLegacyService(service);
+        let legacyOffset = legacyOffsets.get(legacyService) || 0;
+        if (options.length) {
+          entry.className = "certificate-service-menu";
+          const dropdownId = `homepageRtpsDropdown${index}`;
+          const toggle = document.createElement("button");
+          toggle.type = "button";
+          toggle.className = "certificate-service-toggle";
+          toggle.textContent = service.title;
+          toggle.setAttribute("aria-expanded", "false");
+          toggle.setAttribute("aria-haspopup", "true");
+          toggle.setAttribute("aria-controls", dropdownId);
+          const dropdown = document.createElement("div");
+          dropdown.id = dropdownId;
+          dropdown.className = "certificate-service-dropdown";
+          options.forEach((option) => {
+            const optionTitle = typeof option === "string" ? option : option?.title;
+            const optionUrl = typeof option === "object" && option ? option.url : "";
+            const fallback = legacyService?.links[legacyOffset++] || "#";
+            if (typeof optionTitle !== "string") return;
+            const link = document.createElement("a");
+            link.textContent = optionTitle;
+            link.href = homepageHref(optionUrl, fallback);
+            link.dataset.certificateService = "";
+            if (/^https:\/\//i.test(link.href)) {
+              link.target = "_blank";
+              link.rel = "noopener noreferrer";
+            }
+            dropdown.appendChild(link);
+          });
+          if (legacyService) legacyOffsets.set(legacyService, legacyOffset);
+          entry.append(toggle, dropdown);
+        } else if ((typeof service.url === "string" && service.url.trim()) || legacyService?.links[0]) {
+          const link = document.createElement("a");
+          link.textContent = service.title;
+          link.href = homepageHref(service.url, legacyService?.links[0] || "#");
+          link.dataset.certificateService = "";
+          if (/^https:\/\//i.test(link.href)) {
+            link.target = "_blank";
+            link.rel = "noopener noreferrer";
+          }
+          entry.appendChild(link);
+          if (legacyService) legacyOffsets.set(legacyService, 1);
+        } else {
+          entry.textContent = service.title;
+        }
+        list.appendChild(entry);
+      });
+    }
+  }
+
+  const about = settings.about || {};
+  const aboutRoot = document.querySelector(".about");
+  if (aboutRoot) {
+    const title = aboutRoot.querySelector("h2");
+    const description = aboutRoot.querySelector(":scope > div > p");
+    const slogan = aboutRoot.querySelector(".about-slogan");
+    if (title && typeof about.title === "string") title.textContent = about.title;
+    if (description && typeof about.description === "string") description.textContent = about.description;
+    if (slogan && typeof about.slogan === "string") slogan.textContent = about.slogan;
+    const points = aboutRoot.querySelector(".about-points");
+    if (points && Array.isArray(about.points)) {
+      points.replaceChildren();
+      about.points.forEach((text) => {
+        if (typeof text !== "string") return;
+        const paragraph = document.createElement("p");
+        paragraph.textContent = `✓ ${text}`;
+        points.appendChild(paragraph);
+      });
+    }
+  }
+
+  const bhoomiPage = settings.bhoomiPage || {};
+  const bhoomiRootPage = document.querySelector(".bhoomi-page");
+  if (bhoomiRootPage) {
+    const textFields = [
+      [".bhoomi-eyebrow", "eyebrow"],
+      [".bhoomi-hero > .new-badge", "badge"],
+      ["#bhoomiTitle", "title"],
+      [".bhoomi-hero > p", "description"],
+      [".bhoomi-notice", "notice"],
+      [".bhoomi-help-link", "helpLabel"],
+      ["#bhoomiPopularTitle", "popularTitle"],
+      [".bhoomi-popular .bhoomi-section-heading > div > span", "popularEyebrow"],
+      ["#bhoomiDirectoryTitle", "directoryTitle"],
+      [".bhoomi-directory .bhoomi-section-heading > div > span", "directoryEyebrow"],
+      ["#bhoomiSearch", "searchPlaceholder"],
+      ["#bhoomiEmpty", "emptyMessage"],
+      [".bhoomi-support h2", "supportTitle"],
+      [".bhoomi-support p", "supportDescription"],
+      [".bhoomi-support > a", "supportLinkLabel"],
+      [".bhoomi-modal-head .bhoomi-eyebrow", "modalEyebrow"],
+      [".bhoomi-modal-content > h3:first-of-type", "modalPreparationTitle"],
+      [".bhoomi-modal-content > p:nth-of-type(2)", "modalPreparationText"],
+      [".bhoomi-modal-content > h3:nth-of-type(2)", "modalProcessTitle"],
+      [".bhoomi-modal-warning", "modalWarning"],
+      ["#bhoomiModalLink", "modalOpenLabel"],
+    ];
+    textFields.forEach(([selector, key]) => {
+      const element = bhoomiRootPage.querySelector(selector)
+        || document.querySelector(`.bhoomi-modal ${selector}`);
+      if (!element || typeof bhoomiPage[key] !== "string") return;
+      if (key === "searchPlaceholder") element.placeholder = bhoomiPage[key];
+      else element.textContent = bhoomiPage[key];
+    });
+    const helpLink = bhoomiRootPage.querySelector(".bhoomi-help-link");
+    const bhoomiSearch = document.getElementById("bhoomiSearch");
+    const modalClose = document.getElementById("bhoomiModalClose");
+    const supportLink = document.querySelector(".bhoomi-support > a");
+    const modalLink = document.getElementById("bhoomiModalLink");
+    if (helpLink) helpLink.href = homepageHref(bhoomiPage.helpUrl, helpLink.href);
+    if (bhoomiSearch && typeof bhoomiPage.searchLabel === "string") {
+      bhoomiSearch.setAttribute("aria-label", bhoomiPage.searchLabel);
+    }
+    if (modalClose && typeof bhoomiPage.modalCloseLabel === "string") {
+      modalClose.setAttribute("aria-label", bhoomiPage.modalCloseLabel);
+    }
+    if (supportLink) supportLink.href = homepageHref(bhoomiPage.helpUrl, supportLink.href);
+    if (modalLink) modalLink.textContent = typeof bhoomiPage.modalOpenLabel === "string"
+      ? bhoomiPage.modalOpenLabel
+      : modalLink.textContent;
+    const process = document.querySelector(".bhoomi-modal-content ol");
+    if (process && Array.isArray(bhoomiPage.modalProcess)) {
+      process.replaceChildren();
+      bhoomiPage.modalProcess.forEach((text) => {
+        if (typeof text !== "string") return;
+        const item = document.createElement("li");
+        item.textContent = text;
+        process.appendChild(item);
+      });
+    }
+  }
+  if (Array.isArray(settings.bhoomiServices)) {
+    bhoomiServices = settings.bhoomiServices
+      .filter((service) => service && typeof service.id === "string" && typeof service.title === "string")
+      .map((service) => ({
+        id: service.id,
+        icon: typeof service.icon === "string" ? service.icon : "",
+        title: service.title,
+        description: typeof service.description === "string" ? service.description : "",
+        category: typeof service.category === "string" ? service.category : "other",
+        categoryName: typeof service.categoryName === "string" ? service.categoryName : "Other",
+        href: homepageHref(service.href, ""),
+        keywords: typeof service.keywords === "string" ? service.keywords : "",
+      }));
+    const categorySelect = document.getElementById("bhoomiCategory");
+    const categoryValues = new Map(bhoomiServices.map((service) => [service.category, service.categoryName]));
+    if (categorySelect) {
+      const selected = categorySelect.value;
+      categorySelect.replaceChildren();
+      const allOption = document.createElement("option");
+      allOption.value = "all";
+      allOption.textContent = "सभी श्रेणियाँ";
+      categorySelect.appendChild(allOption);
+      categoryValues.forEach((label, value) => {
+        const option = document.createElement("option");
+        option.value = value;
+        option.textContent = label;
+        categorySelect.appendChild(option);
+      });
+      if (categoryValues.has(selected)) categorySelect.value = selected;
+    }
+    const featured = document.getElementById("bhoomiFeatured");
+    if (featured) {
+      featured.replaceChildren(...bhoomiServices.slice(0, 4).map((service) => createBhoomiServiceCard(service, true)));
+    }
+    if (typeof renderBhoomiServices === "function") renderBhoomiServices();
+  }
+
+  const pagesContent = settings.pages || {};
+  const aboutPage = pagesContent.aboutUs || {};
+  const aboutPageCard = document.querySelector("#about-us .page-card");
+  if (aboutPageCard) {
+    const eyebrow = aboutPageCard.querySelector(".page-eyebrow");
+    if (eyebrow && typeof aboutPage.eyebrow === "string") eyebrow.textContent = aboutPage.eyebrow;
+    const title = aboutPageCard.querySelector("h1");
+    if (title && typeof aboutPage.title === "string") title.textContent = aboutPage.title;
+    const intro = aboutPageCard.querySelector("p");
+    if (intro && typeof aboutPage.intro === "string") intro.textContent = aboutPage.intro;
+    const listTitle = aboutPageCard.querySelector("h2");
+    if (listTitle && typeof aboutPage.listTitle === "string") listTitle.textContent = aboutPage.listTitle;
+    const list = aboutPageCard.querySelector(".page-list");
+    if (list && Array.isArray(aboutPage.points)) {
+      list.replaceChildren();
+      aboutPage.points.forEach((text) => {
+        if (typeof text !== "string") return;
+        const item = document.createElement("li");
+        item.textContent = text;
+        list.appendChild(item);
+      });
+    }
+    const closing = aboutPageCard.querySelectorAll("p")[1];
+    if (closing && typeof aboutPage.closing === "string") closing.textContent = aboutPage.closing;
+  }
+  const contactPage = pagesContent.contact || {};
+  const contactPageRoot = document.querySelector("#contact-us .page-card");
+  if (contactPageRoot) {
+    const eyebrow = contactPageRoot.querySelector(".page-eyebrow");
+    const title = contactPageRoot.querySelector("h1");
+    const intro = contactPageRoot.querySelector("p");
+    if (eyebrow && typeof contactPage.eyebrow === "string") eyebrow.textContent = contactPage.eyebrow;
+    if (title && typeof contactPage.title === "string") title.textContent = contactPage.title;
+    if (intro && typeof contactPage.intro === "string") intro.textContent = contactPage.intro;
+    [["contactName", "nameLabel"], ["contactEmail", "emailLabel"], ["contactMessage", "messageLabel"]]
+      .forEach(([id, key]) => {
+        const label = contactPageRoot.querySelector(`label[for="${id}"]`);
+        if (label && typeof contactPage[key] === "string") label.textContent = contactPage[key];
+      });
+    const submit = contactPageRoot.querySelector("button[type='submit']");
+    if (submit && typeof contactPage.submitLabel === "string") submit.textContent = contactPage.submitLabel;
+  }
+  const termsPage = pagesContent.terms || {};
+  const termsCard = document.querySelector("#terms-and-conditions .page-card");
+  if (termsCard) {
+    const eyebrow = termsCard.querySelector(".page-eyebrow");
+    if (eyebrow && typeof termsPage.eyebrow === "string") eyebrow.textContent = termsPage.eyebrow;
+    termsCard.replaceChildren(...(eyebrow ? [eyebrow] : []));
+    if (typeof termsPage.title === "string") {
+      const title = document.createElement("h1");
+      title.textContent = termsPage.title;
+      termsCard.appendChild(title);
+    }
+    if (typeof termsPage.intro === "string") {
+      const intro = document.createElement("p");
+      intro.textContent = termsPage.intro;
+      termsCard.appendChild(intro);
+    }
+    if (Array.isArray(termsPage.sections)) {
+      termsPage.sections.forEach((section) => {
+        if (!section || typeof section.title !== "string" || typeof section.body !== "string") return;
+        const heading = document.createElement("h2");
+        heading.textContent = section.title;
+        const body = document.createElement("p");
+        body.textContent = section.body;
+        termsCard.append(heading, body);
+      });
+    }
+  }
+
+  const sidebar = settings.rightSidebar || {};
+  const latestNews = document.querySelector(".right-sidebar .news-side");
+  if (latestNews) {
+    const title = latestNews.querySelector(".side-title");
+    if (title && typeof sidebar.latestNewsTitle === "string") title.textContent = sidebar.latestNewsTitle;
+    Array.from(latestNews.children).forEach((child) => {
+      if (!child.classList.contains("side-title")) child.remove();
+    });
+    if (Array.isArray(sidebar.latestNews)) {
+      sidebar.latestNews.forEach((item) => {
+        if (!item || typeof item.title !== "string") return;
+        const link = document.createElement("a");
+        link.textContent = item.title;
+        const href = homepageHref(item.url, "");
+        if (href) link.href = href;
+        if (typeof item.displayDate === "string" && item.displayDate) {
+          const date = document.createElement("small");
+          date.textContent = item.displayDate;
+          link.appendChild(date);
+        }
+        if (href && /^https:\/\//i.test(link.href)) {
+          link.target = "_blank";
+          link.rel = "noopener noreferrer";
+        }
+        latestNews.appendChild(link);
+      });
+    }
+  }
+  const important = document.querySelector(".right-sidebar [data-nav-view='important-links']");
+  if (important) {
+    const title = important.querySelector(".side-title");
+    if (title && typeof sidebar.importantLinksTitle === "string") title.textContent = sidebar.importantLinksTitle;
+    const links = Array.isArray(sidebar.importantLinks)
+      ? sidebar.importantLinks.filter((item) => item && typeof item.title === "string").map((item) => ({ ...item, title: `${item.title} ›` }))
+      : sidebar.importantLinks;
+    renderHomepageLinks(important, links);
+  }
+  const popular = document.querySelector(".right-sidebar [data-nav-view='popular-searches']");
+  if (popular) {
+    const title = popular.querySelector(".side-title");
+    if (title && typeof sidebar.popularSearchesTitle === "string") title.textContent = sidebar.popularSearchesTitle;
+    const links = Array.isArray(sidebar.popularSearches)
+      ? sidebar.popularSearches.filter((item) => item && typeof item.title === "string").map((item) => ({ ...item, title: `› ${item.title}` }))
+      : sidebar.popularSearches;
+    renderHomepageLinks(popular, links);
+  }
+
+  const footer = settings.footer || {};
+  const footerTagline = document.querySelector(".footer-brand p");
+  if (footerTagline && typeof footer.tagline === "string") footerTagline.textContent = footer.tagline;
+  const footerGroups = Array.from(document.querySelectorAll(".footer-grid > div"));
+  const quick = footerGroups[1];
+  const pages = footerGroups[2];
+  const socialsColumn = footerGroups[3];
+  const subscribe = footerGroups[4];
+  [[quick, footer.quickLinksTitle, footer.quickLinks], [pages, footer.importantPagesTitle, footer.importantPages]]
+    .forEach(([column, heading, links]) => {
+      if (!column) return;
+      const title = column.querySelector("h3");
+      if (title && typeof heading === "string") title.textContent = heading;
+      renderHomepageLinks(column, links);
+    });
+  if (socialsColumn) {
+    const title = socialsColumn.querySelector("h3");
+    if (title && typeof footer.socialTitle === "string") title.textContent = footer.socialTitle;
+  }
+  if (subscribe) {
+    const title = subscribe.querySelector("h3");
+    const input = subscribe.querySelector("input");
+    const button = subscribe.querySelector("button");
+    if (title && typeof footer.subscribeTitle === "string") title.textContent = footer.subscribeTitle;
+    if (input && typeof footer.emailPlaceholder === "string") input.placeholder = footer.emailPlaceholder;
+    if (button && typeof footer.subscribeButtonLabel === "string") button.textContent = footer.subscribeButtonLabel;
+  }
+  const copyright = document.querySelector(".copyright .container");
+  if (copyright) {
+    const spans = copyright.querySelectorAll("span");
+    if (spans[0] && typeof footer.copyright === "string") spans[0].textContent = `© ${new Date().getFullYear()} ${footer.copyright}`;
+    if (spans[1] && typeof footer.motto === "string") spans[1].textContent = footer.motto;
+  }
+}
+
 async function loadManagedSiteContent() {
   try {
     const response = await fetch(siteContentApiUrl, { cache: "no-store" });
@@ -324,14 +873,7 @@ async function loadManagedSiteContent() {
         .find((element) => element.id === id);
       if (staleCard) staleCard.hidden = true;
     });
-    const hero = document.querySelector(".hero-blue");
-    hero.querySelector("h2").textContent = settings.heroTitle || "";
-    hero.querySelector("p").textContent = settings.heroSubtitle || "";
-    const heroButton = hero.querySelector(".yellow-btn");
-    heroButton.textContent = settings.heroButtonLabel || "";
-    heroButton.href = settings.heroButtonUrl || "#jobs";
-    const aboutIntro = document.querySelector(".about > div > p");
-    if (aboutIntro && settings.aboutIntro) aboutIntro.textContent = settings.aboutIntro;
+    applyHomepageContent(settings);
 
     renderManagedNavigation(categories, pages || []);
     applyManagedPages(pages || []);
@@ -550,12 +1092,12 @@ searchInput.addEventListener("keydown", (event) => {
 searchBtn.addEventListener("click", showSearchResults);
 
 menuBtn.addEventListener("click", () => {
-  mainNav.classList.toggle("open");
+  const isOpen = mainNav.classList.toggle("open");
+  menuBtn.setAttribute("aria-expanded", String(isOpen));
 });
 
 const moreToggle = document.getElementById("moreToggle");
 const moreMenu = document.getElementById("moreMenu");
-const certificateServiceMenus = document.querySelectorAll(".certificate-service-menu");
 const navigationViews = new Set([
   "home",
   "jobs",
@@ -618,63 +1160,69 @@ moreToggle.addEventListener("click", () => {
   moreToggle.setAttribute("aria-expanded", String(!isExpanded));
 });
 
-certificateServiceMenus.forEach((menu) => {
-  const toggle = menu.querySelector(".certificate-service-toggle");
-  toggle.addEventListener("click", () => {
+document.addEventListener("click", (event) => {
+  const target = event.target instanceof Element ? event.target : null;
+  const toggle = target?.closest(".certificate-service-toggle");
+  if (toggle) {
+    const menu = toggle.closest(".certificate-service-menu");
     const isOpen = menu.classList.toggle("is-open");
+    menu.parentElement.querySelectorAll(".certificate-service-menu").forEach((sibling) => {
+      if (sibling === menu) return;
+      sibling.classList.remove("is-open");
+      sibling.querySelector(".certificate-service-toggle")?.setAttribute("aria-expanded", "false");
+    });
     toggle.setAttribute("aria-expanded", String(isOpen));
     if (!isOpen) {
       menu.querySelectorAll(".certificate-level-option.is-open").forEach((option) => {
         option.classList.remove("is-open");
-        option.querySelector(".certificate-level-toggle").setAttribute("aria-expanded", "false");
+        option.querySelector(".certificate-level-toggle")?.setAttribute("aria-expanded", "false");
       });
     }
-  });
+    return;
+  }
 
-  menu.querySelectorAll(".certificate-level-toggle").forEach((levelToggle) => {
-    levelToggle.addEventListener("click", () => {
-      const option = levelToggle.closest(".certificate-level-option");
-      const isOpen = option.classList.toggle("is-open");
-      menu.querySelectorAll(".certificate-level-option").forEach((sibling) => {
-        if (sibling === option) return;
-        sibling.classList.remove("is-open");
-        sibling.querySelector(".certificate-level-toggle").setAttribute("aria-expanded", "false");
-      });
-      levelToggle.setAttribute("aria-expanded", String(isOpen));
+  const levelToggle = target?.closest(".certificate-level-toggle");
+  if (levelToggle) {
+    const option = levelToggle.closest(".certificate-level-option");
+    const menu = levelToggle.closest(".certificate-service-menu");
+    const isOpen = option.classList.toggle("is-open");
+    menu.querySelectorAll(".certificate-level-option").forEach((sibling) => {
+      if (sibling === option) return;
+      sibling.classList.remove("is-open");
+      sibling.querySelector(".certificate-level-toggle")?.setAttribute("aria-expanded", "false");
     });
-  });
+    levelToggle.setAttribute("aria-expanded", String(isOpen));
+    return;
+  }
 
-  menu.querySelectorAll("[data-certificate-service]").forEach((link) => {
-    link.addEventListener("click", (event) => {
-      if (link.getAttribute("href") === "#") event.preventDefault();
+  const serviceLink = target?.closest("[data-certificate-service]");
+  if (serviceLink?.getAttribute("href") === "#") {
+    event.preventDefault();
+  }
+  if (!target?.closest(".certificate-service-menu")) {
+    document.querySelectorAll(".certificate-service-menu.is-open").forEach((menu) => {
+      menu.classList.remove("is-open");
+      menu.querySelector(".certificate-service-toggle")?.setAttribute("aria-expanded", "false");
     });
-  });
-});
-
-document.addEventListener("click", (event) => {
-  certificateServiceMenus.forEach((menu) => {
-    if (menu.contains(event.target)) return;
-    menu.classList.remove("is-open");
-    menu.querySelector(".certificate-service-toggle").setAttribute("aria-expanded", "false");
-  });
+  }
 });
 
 document.addEventListener("keydown", (event) => {
   if (event.key !== "Escape") return;
-  certificateServiceMenus.forEach((menu) => {
+  document.querySelectorAll(".certificate-service-menu.is-open").forEach((menu) => {
     const openLevel = menu.querySelector(".certificate-level-option.is-open");
     if (openLevel) {
       openLevel.classList.remove("is-open");
       const levelToggle = openLevel.querySelector(".certificate-level-toggle");
-      levelToggle.setAttribute("aria-expanded", "false");
-      levelToggle.focus();
+      levelToggle?.setAttribute("aria-expanded", "false");
+      levelToggle?.focus();
       return;
     }
     if (!menu.classList.contains("is-open")) return;
     menu.classList.remove("is-open");
     const toggle = menu.querySelector(".certificate-service-toggle");
-    toggle.setAttribute("aria-expanded", "false");
-    toggle.focus();
+    toggle?.setAttribute("aria-expanded", "false");
+    toggle?.focus();
   });
 });
 
@@ -690,7 +1238,7 @@ renderPosts();
 setNavigationView(window.location.hash.slice(1));
 loadManagedSiteContent();
 
-const bhoomiServices = [
+let bhoomiServices = [
   {
     id: "portal",
     icon: "🏛",
@@ -882,7 +1430,7 @@ function createBhoomiServiceCard(service, featured = false) {
   if (service.href) {
     const open = document.createElement("a");
     open.className = "bhoomi-open-button";
-    open.href = service.href;
+    open.href = homepageHref(service.href);
     open.target = "_blank";
     open.rel = "noopener noreferrer";
     open.textContent = "Open Service ↗";
@@ -926,7 +1474,7 @@ function showBhoomiServiceDetails(serviceId) {
   bhoomiModalTitle.textContent = service.title;
   bhoomiModalDescription.textContent = service.description;
   if (service.href) {
-    bhoomiModalLink.href = service.href;
+    bhoomiModalLink.href = homepageHref(service.href);
     bhoomiModalLink.hidden = false;
   } else {
     bhoomiModalLink.removeAttribute("href");

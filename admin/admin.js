@@ -15,6 +15,7 @@
   let categories = [];
   let articles = [];
   let updates = [];
+  let homepageContent = {};
   let currentUpdateId = null;
   let currentCategorySlug = null;
   let refreshTimer;
@@ -97,7 +98,7 @@
   }
 
   async function loadDashboard() {
-    await Promise.all([loadCategories(), loadArticles(), loadUpdates()]);
+    await Promise.all([loadCategories(), loadArticles(), loadUpdates(), loadHomepage()]);
   }
 
   async function loadCategories() {
@@ -125,6 +126,179 @@
     const result = await request("latest-updates");
     updates = result.data;
     renderUpdates();
+  }
+
+  async function loadHomepage() {
+    const result = await request("homepage");
+    homepageContent = result.data;
+    renderHomepageEditor();
+  }
+
+  function homepageFieldLabel(key) {
+    return key.replace(/([a-z])([A-Z])/g, "$1 $2")
+      .replace(/[-_]/g, " ")
+      .replace(/\b\w/g, (letter) => letter.toUpperCase());
+  }
+
+  function blankHomepageValue(value) {
+    if (Array.isArray(value)) return [];
+    if (value && typeof value === "object") {
+      return Object.fromEntries(Object.entries(value).map(([key, child]) => [key, blankHomepageValue(child)]));
+    }
+    if (typeof value === "boolean") return false;
+    if (typeof value === "number") return 0;
+    return "";
+  }
+
+  function blankHomepageItem(values, key, path) {
+    if (values.length) return blankHomepageValue(values[0]);
+    const normalizedPath = path.filter((part) => typeof part !== "number").join(".");
+    const templates = {
+      "promos": { id: "", icon: "", title: "", buttonLabel: "", buttonUrl: "" },
+      "socialLinks": { label: "", url: "" },
+      "rtps.services": { id: "", title: "", url: "", options: [] },
+      "rtps.services.options": { title: "", url: "" },
+      "pages.terms.sections": { title: "", body: "" },
+      "bhoomiServices": {
+        id: "", icon: "", title: "", description: "", category: "", categoryName: "", href: "", keywords: ""
+      },
+      "navigation.moreLinks": { view: "", title: "", url: "" },
+      "rightSidebar.latestNews": { title: "", displayDate: "", url: "" },
+    };
+    if (Object.hasOwn(templates, normalizedPath)) return templates[normalizedPath];
+    if (["items", "services", "options", "importantLinks", "popularSearches", "quickLinks", "importantPages", "trustPoints"].includes(key)) {
+      return ["importantLinks", "popularSearches", "quickLinks", "importantPages", "services", "options"].includes(key)
+        ? { title: "", url: "" }
+        : "";
+    }
+    return "";
+  }
+
+  function setHomepageValue(path, value) {
+    let target = homepageContent;
+    path.slice(0, -1).forEach((key) => {
+      target = target[key];
+    });
+    target[path[path.length - 1]] = value;
+  }
+
+  function renderHomepageField(parent, key, value, path) {
+    if (Array.isArray(value)) {
+      const group = document.createElement("details");
+      group.className = "homepage-json-group homepage-json-array";
+      group.open = path.length === 1;
+      const summary = document.createElement("summary");
+      summary.textContent = `${homepageFieldLabel(key)} (${value.length})`;
+      group.appendChild(summary);
+      const items = document.createElement("div");
+      items.className = "homepage-json-items";
+      value.forEach((item, index) => {
+        const entry = document.createElement("div");
+        entry.className = "homepage-json-entry";
+        const heading = document.createElement("div");
+        heading.className = "homepage-json-entry-heading";
+        const itemTitle = document.createElement("strong");
+        itemTitle.textContent = `${homepageFieldLabel(key)} ${index + 1}`;
+        const remove = document.createElement("button");
+        remove.type = "button";
+        remove.className = "quiet-button";
+        remove.textContent = "Remove";
+        remove.addEventListener("click", () => {
+          let target = homepageContent;
+          path.slice(0, -1).forEach((part) => { target = target[part]; });
+          target.splice(index, 1);
+          renderHomepageEditor();
+        });
+        heading.append(itemTitle, remove);
+        entry.appendChild(heading);
+        if (item && typeof item === "object" && !Array.isArray(item)) {
+          Object.entries(item).forEach(([childKey, child]) => {
+            renderHomepageField(entry, childKey, child, [...path, index, childKey]);
+          });
+        } else {
+          renderHomepageField(entry, "value", item, [...path, index]);
+        }
+        items.appendChild(entry);
+      });
+      const add = document.createElement("button");
+      add.type = "button";
+      add.className = "quiet-button";
+      add.textContent = `＋ Add ${homepageFieldLabel(key).replace(/s$/, "")}`;
+      add.addEventListener("click", () => {
+        let target = homepageContent;
+        path.slice(0, -1).forEach((part) => { target = target[part]; });
+        target.push(blankHomepageItem(target, path[path.length - 1], path));
+        renderHomepageEditor();
+      });
+      group.append(items, add);
+      parent.appendChild(group);
+      return;
+    }
+
+    if (value && typeof value === "object") {
+      const group = document.createElement("details");
+      group.className = "homepage-json-group";
+      group.open = path.length === 1;
+      const summary = document.createElement("summary");
+      summary.textContent = homepageFieldLabel(key);
+      group.appendChild(summary);
+      const fields = document.createElement("div");
+      fields.className = "homepage-json-fields";
+      Object.entries(value).forEach(([childKey, child]) => {
+        renderHomepageField(fields, childKey, child, [...path, childKey]);
+      });
+      group.appendChild(fields);
+      parent.appendChild(group);
+      return;
+    }
+
+    const label = document.createElement("label");
+    label.className = typeof value === "boolean" ? "check-label" : "";
+    const title = document.createElement("span");
+    title.textContent = homepageFieldLabel(key);
+    let input;
+    if (typeof value === "boolean") {
+      input = document.createElement("input");
+      input.type = "checkbox";
+      input.checked = value;
+      input.addEventListener("change", () => setHomepageValue(path, input.checked));
+      label.append(input, title);
+    } else if (typeof value === "number") {
+      input = document.createElement("input");
+      input.type = "number";
+      input.value = String(value);
+      input.addEventListener("input", () => setHomepageValue(path, Number(input.value) || 0));
+      label.append(title, input);
+    } else {
+      input = document.createElement("textarea");
+      input.rows = String(value).length > 100 || String(value).includes("\n") ? 3 : 1;
+      input.value = String(value ?? "");
+      input.addEventListener("input", () => setHomepageValue(path, input.value));
+      label.append(title, input);
+    }
+    parent.appendChild(label);
+  }
+
+  function renderHomepageEditor() {
+    const editor = document.getElementById("homepageEditor");
+    editor.replaceChildren();
+    Object.entries(homepageContent).forEach(([key, value]) => {
+      renderHomepageField(editor, key, value, [key]);
+    });
+  }
+
+  async function saveHomepage() {
+    try {
+      const result = await request("homepage", {
+        method: "PUT",
+        body: JSON.stringify({ content: homepageContent })
+      });
+      homepageContent = result.data;
+      renderHomepageEditor();
+      showMessage(dashboardMessage, "Homepage content saved.", false);
+    } catch (error) {
+      showMessage(dashboardMessage, error.message);
+    }
   }
 
   function makeAction(label, handler, className = "") {
@@ -606,6 +780,7 @@
   });
   document.getElementById("cancelCategoryButton").addEventListener("click", resetCategoryForm);
   document.getElementById("categoryForm").addEventListener("submit", saveCategory);
+  document.getElementById("saveHomepageButton").addEventListener("click", saveHomepage);
   document.getElementById("articleQuery").addEventListener("input", () => {
     window.clearTimeout(refreshTimer);
     refreshTimer = window.setTimeout(() => loadArticles().catch((error) => showMessage(dashboardMessage, error.message)), 250);

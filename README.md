@@ -1,13 +1,14 @@
 # Cyber Junction Dynamic Articles
 
-This project keeps the existing static Cyber Junction homepage and adds a PHP/PostgreSQL article CMS beside it. PHP 8.1+ with PDO PostgreSQL, `mbstring` and `openssl`, plus PostgreSQL 14+ are required; the source-only workspace does not include a PHP runtime or a database server.
+This project retains the Cyber Junction homepage layout and adds PHP/PostgreSQL content management for its homepage, articles, categories and Latest Updates. PHP 8.1+ with PDO PostgreSQL, `mbstring` and `openssl`, plus PostgreSQL 14+ are required; the source-only workspace does not include a PHP runtime or a database server.
 
 ## Included
 
 - Reusable, server-rendered article pages at `/{slug}/`, category pages at `/category/{slug}/`, and a generated `/sitemap.xml`.
 - Secure admin dashboard at `/admin/` with one-time first-admin setup, login/logout, article search and filters, draft/publish/unpublish, edit, delete confirmation, preview, featured articles, categories, and Latest Updates.
+- A **Homepage** dashboard editor for the homepage text, branding, promotions, sidebar links, social links, service links and Bihar Bhoomi directory. Categories and Latest Updates continue to use their existing dashboard sections.
 - PostgreSQL schema and an explicitly labelled **draft-only** demonstration article. It contains no invented recruitment dates or eligibility data and is not visible publicly.
-- Published article content automatically populates the existing homepage category cards and Latest Updates. The existing homepage layout, navigation, contact form and customer-portal links remain in place.
+- Published article content automatically populates the existing homepage category cards and Latest Updates. The existing homepage layout, navigation and contact form remain in place.
 - Old article slugs redirect after a slug edit. Drafts, unpublished articles, future-dated articles and articles in inactive categories are excluded from public routes, search, homepage lists and the sitemap.
 
 ## Local setup on Windows
@@ -40,6 +41,12 @@ This project keeps the existing static Cyber Junction homepage and adds a PHP/Po
 
 The PHP built-in server is not a production server. Keep it bound to localhost and do not expose it to the public internet.
 
+## Homepage content
+
+Open **Homepage** in the admin dashboard to edit the homepage sections, labels, text, links and service-directory entries. Use the existing **Categories** and **Latest Updates** sections for those items. The Homepage editor supports adding and removing entries in its list fields; changes are saved to the PostgreSQL `homepage_settings` table and served to the public site.
+
+For an existing database, re-run `backend/schema.sql` in the Supabase SQL Editor before deploying or using the Homepage editor. The schema creates the new `homepage_settings` table idempotently and does not overwrite saved homepage content.
+
 ## Admin article fields
 
 Articles use a shared editor and template. Content is plain text (blank lines create paragraphs); tabular fields use one `Label | Value` row per line; list fields use one entry per line; FAQs use one `Question | Answer` pair per line. Featured images and official links are validated HTTP/HTTPS URLs. Empty fields and sections are not rendered. To add a future category, use **Categories**; existing categories with articles can be deactivated but not deleted.
@@ -62,7 +69,7 @@ The article search includes title, category, short description and editor-suppli
 - [ ] Create, preview, save draft, publish, edit, unpublish and delete an article. Confirm title/slug uniqueness, a slug-change 301 redirect and category updates.
 - [ ] Confirm draft/unpublished/future-dated/inactive-category articles do not appear in article routes, search, category pages, homepage cards or sitemap; verify unknown URLs return HTTP 404.
 - [ ] Test all optional article fields empty and populated; verify links, tables, FAQs, related/previous-next articles, metadata, structured data and mobile layouts.
-- [ ] Test category creation/deactivation, Latest Updates create/edit/hide/delete, search by title/category/keyword, the contact form and existing homepage navigation/customer-portal links.
+- [ ] Test homepage text/link edits and list add/remove, category creation/deactivation, Latest Updates create/edit/hide/delete, search by title/category/keyword, the contact form and homepage navigation.
 - [ ] Check PHP and web-server logs after invalid input and failed database connections; verify errors do not reveal stack traces or credentials to public responses.
 
 This source tree has no bundled PHP/PostgreSQL server. Runtime database, admin-authentication and Apache rewrite tests must be run after installing/configuring the local stack or deploying to the target PHP host.

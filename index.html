@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CYBER Junction - Latest Government Updates</title>
+  <title>Cyber Junction - Latest Government Updates</title>
   <meta name="description" content="Cyber Junction - Latest Jobs, Results, Admit Card, Admission, Scholarship and Sarkari Yojana Updates.">
   <link rel="icon" type="image/svg+xml" href="./customer-portal/cyber-help.svg">
   <link rel="stylesheet" href="style.css">
@@ -12,7 +12,7 @@
 
 <header class="site-header">
   <div class="top-header container">
-    <a class="brand" href="#">
+    <a class="brand" href="#home">
       <img class="brand-logo" src="Untitled-1 copy.jpg" alt="Cyber Junction Logo">
       <div>
         <h1>CYBER <span>JUNCTION</span></h1>
@@ -25,7 +25,6 @@
         <div class="mini-links">
           <span>सही जानकारी</span><span>|</span><span>समय पर अपडेट</span><span>|</span><span>आपके लिए</span>
         </div>
-        <a class="header-login-btn" href="./customer-portal/" data-portal-link="true">Customer Login</a>
       </div>
       <div class="search">
         <input id="searchInput" type="search" placeholder="Search Jobs, Results, Admit Card, Scheme..." aria-label="Search this website" autocomplete="off" aria-controls="searchResults">
@@ -34,19 +33,19 @@
       <div class="search-results" id="searchResults" role="listbox" aria-live="polite" hidden></div>
     </div>
 
-    <button class="menu-btn" id="menuBtn" aria-label="Menu">☰</button>
+    <button class="menu-btn" id="menuBtn" type="button" aria-label="Menu" aria-expanded="false" aria-controls="mainNav">☰</button>
   </div>
 
   <nav class="main-nav" id="mainNav">
     <div class="container nav-inner">
       <a href="#home" data-nav-view="home">⌂ Home</a>
       <a href="#bihar-bhoomi" data-nav-view="bihar-bhoomi">🌾 Bihar Bhoomi</a>
-      <a href="#jobs" data-nav-view="jobs">▣ Latest Job</a>
-      <a href="#results" data-nav-view="results">▤ Result</a>
+      <a href="#jobs" data-nav-view="jobs">▣ Latest Jobs</a>
+      <a href="#results" data-nav-view="results">▤ Results</a>
       <a href="#admit" data-nav-view="admit">🎟 Admit Card</a>
       <a href="#admission" data-nav-view="admission">🎓 Admission</a>
       <a href="#scholarship" data-nav-view="scholarship">💰 Scholarship</a>
-      <a href="#yojana" data-nav-view="yojana">🏛 Yojna</a>
+      <a href="#yojana" data-nav-view="yojana">🏛 Yojana</a>
       <a href="#bihar" data-nav-view="bihar">📰 Bihar News</a>
       <a href="#career" data-nav-view="career">🚀 Career</a>
       <div class="more-nav">
@@ -59,7 +58,6 @@
           <a href="#about-us" data-nav-view="about-us">About Us</a>
           <a href="#contact-us" data-nav-view="contact-us">Contact Us</a>
           <a href="#terms-and-conditions" data-nav-view="terms-and-conditions">Terms &amp; Conditions</a>
-          <a href="./customer-portal/" data-portal-link="true">Customer Login</a>
         </div>
       </div>
     </div>
@@ -76,7 +74,6 @@
         <p>Latest Government Job Updates</p>
         <div class="hero-actions">
           <a class="yellow-btn" href="#jobs">View Latest Jobs →</a>
-          <a class="portal-login-btn" href="./customer-portal/" data-portal-link="true">Customer Login</a>
         </div>
       </div>
     </div>
@@ -105,23 +102,20 @@
 
         <div class="side-title"><span>आधार कार्ड </span><span class="aadhaar-services-title">सेवाएं</span></div>
 
-        <li><a href="https://myaadhaarbeta.uidai.gov.in/genericDownloadAadhaar/en" target="_blank" rel="noopener noreferrer">आधार कार्ड डाउनलोड</a></li>
-           <a href="job1.html" class="job-card">
-
-        <li><a href="https://myaadhaarbeta.uidai.gov.in/check-aadhaar-validity/en" target="_blank" rel="noopener noreferrer">आधार कार्ड update</a></li>
-           <a href="job1.html" class="job-card">
-
-        <li><a href="https://myaadhaarbeta.uidai.gov.in/pvc/en" target="_blank" rel="noopener noreferrer">ORDER PVC AADHAR</a></li>
-           <a href="job1.html" class="job-card">
+        <ul class="post-list">
+          <li><a href="https://myaadhaarbeta.uidai.gov.in/genericDownloadAadhaar/en" target="_blank" rel="noopener noreferrer">आधार कार्ड डाउनलोड</a></li>
+          <li><a href="https://myaadhaarbeta.uidai.gov.in/check-aadhaar-validity/en" target="_blank" rel="noopener noreferrer">आधार कार्ड अपडेट</a></li>
+          <li><a href="https://myaadhaarbeta.uidai.gov.in/pvc/en" target="_blank" rel="noopener noreferrer">PVC Aadhaar Card Order</a></li>
+        </ul>
       </div>
 
 
       <div class="section-box latest-box">
         <div class="section-head blue">
           <h2>🔥 Latest Updates</h2>
-          <a href="#all">View All →</a>
         </div>
         <div id="latestList" class="latest-list"></div>
+        <div class="card-footer"><a class="card-more-link" href="#latest-news">View All →</a></div>
       </div>
 
       <div class="promo">
@@ -225,41 +219,39 @@
         </article>
 
         <article class="update-card blue-card" id="jobs" data-nav-view="jobs">
-          <div class="card-head"><span>▣ Latest Jobs</span><a href="#jobs">View All →</a></div>
+          <div class="card-head"><span>▣ Latest Jobs</span></div>
           <ul class="post-list">
 
            
-<a href="https://ssc.gov.in" class="job-card" target="_blank"><li>SSC CHSL 10+2 Online Form 2026</li></a>
-<a href="https://esb.mp.gov.in" class="job-card" target="_blank"><li>MP Police Constable Driver Online Form 2026 & MP Police GD Constable Correction/ Edit Form 2026</li></a>
-<a href="https://sci.gov.in" class="job-card" target="_blank"><li>Supreme Court SCI Junior Court Assistant Online Form 2026</li></a>
-<a href="https://upessc.up.gov.in" class="job-card" target="_blank"><li>UPESSC UP Assistant Professor Online Form 2026</li></a>
-<a href="https://upsssc.gov.in" class="job-card" target="_blank"><li>UPSSSC Junior Engineer JE Agriculture Online Form 2026</li></a>
-<a href="https://gims.ac.in" class="job-card" target="_blank"><li>GIMS Noida Staff Nurse Online Form 2026</li></a>
-<a href="https://joinindianarmy.nic.in" class="job-card" target="_blank"><li>Indian Army 10+2 TES 57th Entry Online Form 2026</li></a>
-<a href="https://mphc.gov.in" class="job-card" target="_blank"><li>MP High Court Stenographer Gr-II, III & AG Gr-III Online Form 2026</li></a>
-<a href="https://joinindiancoastguard.cdac.in" class="job-card" target="_blank"><li>Indian Coast Guard CGEPT 01/2027 & 02/2027 Online Form</li></a>
-<a href="https://dsssbonline.nic.in" class="job-card" target="_blank"><li>DSSSB Delhi District Court Various Post Online Form 2026</li></a>
-<a href="https://www.ibps.in" class="job-card" target="_blank"><li>IBPS RRB XV 15th Scale-I, II, III Correction Form 2026</li></a>
-<a href="https://bpsc.bih.nic.in" class="job-card" target="_blank"><li>BPSC School Teacher TRE 4.0 Online Form 2026</li></a>
-<a href="https://upessc.up.gov.in" class="job-card" target="_blank"><li>UPESSC PRT Assistant Teacher Online Form 2026</li></a>
-<a href="https://iocl.com" class="job-card" target="_blank"><li>IOCL Apprentice Online Form 2026</li></a>
-<a href="https://esb.mp.gov.in" class="job-card" target="_blank"><li>MPESB Group 3 Sub Engineer & Other Post Online Form 2026</li></a>
-<a href="https://rrcjaipur.in" class="job-card" target="_blank"><li>Railway RRC NWR Apprentice Online Form 2026</li></a>
-<a href="https://upsssc.gov.in" class="job-card" target="_blank"><li>UPSSSC Regional Youth Welfare Officer & Sports Directorate Online Form 2026</li></a>
-<a href="https://bseobihar.com" class="job-card" target="_blank"><li>Bihar Library Eligibility Test BLET Online Form 2026</li></a>
-
+            <li><a href="https://ssc.gov.in" target="_blank" rel="noopener noreferrer">SSC CHSL 10+2 Online Form 2026</a></li>
+            <li><a href="https://esb.mp.gov.in" target="_blank" rel="noopener noreferrer">MP Police Constable Driver Online Form 2026 &amp; MP Police GD Constable Correction/Edit Form 2026</a></li>
+            <li><a href="https://sci.gov.in" target="_blank" rel="noopener noreferrer">Supreme Court SCI Junior Court Assistant Online Form 2026</a></li>
+            <li><a href="https://upessc.up.gov.in" target="_blank" rel="noopener noreferrer">UPESSC UP Assistant Professor Online Form 2026</a></li>
+            <li><a href="https://upsssc.gov.in" target="_blank" rel="noopener noreferrer">UPSSSC Junior Engineer JE Agriculture Online Form 2026</a></li>
+            <li><a href="https://gims.ac.in" target="_blank" rel="noopener noreferrer">GIMS Noida Staff Nurse Online Form 2026</a></li>
+            <li><a href="https://joinindianarmy.nic.in" target="_blank" rel="noopener noreferrer">Indian Army 10+2 TES 57th Entry Online Form 2026</a></li>
+            <li><a href="https://mphc.gov.in" target="_blank" rel="noopener noreferrer">MP High Court Stenographer Gr-II, III &amp; AG Gr-III Online Form 2026</a></li>
+            <li><a href="https://joinindiancoastguard.cdac.in" target="_blank" rel="noopener noreferrer">Indian Coast Guard CGEPT 01/2027 &amp; 02/2027 Online Form</a></li>
+            <li><a href="https://dsssbonline.nic.in" target="_blank" rel="noopener noreferrer">DSSSB Delhi District Court Various Post Online Form 2026</a></li>
+            <li><a href="https://www.ibps.in" target="_blank" rel="noopener noreferrer">IBPS RRB XV 15th Scale-I, II, III Correction Form 2026</a></li>
+            <li><a href="https://bpsc.bih.nic.in" target="_blank" rel="noopener noreferrer">BPSC School Teacher TRE 4.0 Online Form 2026</a></li>
+            <li><a href="https://upessc.up.gov.in" target="_blank" rel="noopener noreferrer">UPESSC PRT Assistant Teacher Online Form 2026</a></li>
+            <li><a href="https://iocl.com" target="_blank" rel="noopener noreferrer">IOCL Apprentice Online Form 2026</a></li>
+            <li><a href="https://esb.mp.gov.in" target="_blank" rel="noopener noreferrer">MPESB Group 3 Sub Engineer &amp; Other Post Online Form 2026</a></li>
+            <li><a href="https://rrcjaipur.in" target="_blank" rel="noopener noreferrer">Railway RRC NWR Apprentice Online Form 2026</a></li>
+            <li><a href="https://upsssc.gov.in" target="_blank" rel="noopener noreferrer">UPSSSC Regional Youth Welfare Officer &amp; Sports Directorate Online Form 2026</a></li>
+            <li><a href="https://bseobihar.com" target="_blank" rel="noopener noreferrer">Bihar Library Eligibility Test BLET Online Form 2026</a></li>
             <li><a href="https://csbc.bihar.gov.in/" target="_blank" rel="noopener noreferrer">Bihar Police Recruitment</a></li>
-           <a href="job1.html" class="job-card">
-    <h3>Railway Apprentice</h3>
-</a>
+            <li><a href="https://indianrailways.gov.in/" target="_blank" rel="noopener noreferrer">Railway Apprentice</a></li>
             <li>UPSC Civil Services 2025</li>
             <li>SSC CHSL Recruitment 2025</li>
             <li>IBPS Clerk Notification 2025</li>
           </ul>
+          <div class="card-footer"><a class="card-more-link" href="#jobs">View All →</a></div>
         </article>
 
         <article class="update-card green-card" id="results" data-nav-view="results">
-          <div class="card-head"><span>▤ Results</span><a href="#results">View All →</a></div>
+          <div class="card-head"><span>▤ Results</span></div>
           <ul class="post-list">
             <li>UPSC CSE Prelims Result 2025</li>
             <li>Bihar Board 12th Result 2025</li>
@@ -267,10 +259,11 @@
             <li>SSC GD Result 2025</li>
             <li>BPSC 70th Result 2025</li>
           </ul>
+          <div class="card-footer"><a class="card-more-link" href="#results">View All →</a></div>
         </article>
 
         <article class="update-card orange-card" id="admit" data-nav-view="admit">
-          <div class="card-head"><span>🎟 Admit Card</span><a href="#admit">View All →</a></div>
+          <div class="card-head"><span>🎟 Admit Card</span></div>
           <ul class="post-list">
             <li>UPSC CSE Prelims Admit Card 2025</li>
             <li>Bihar Police Constable Admit Card</li>
@@ -278,10 +271,11 @@
             <li>Railway RRB NTPC Admit Card</li>
             <li>BPSC Admit Card 2025</li>
           </ul>
+          <div class="card-footer"><a class="card-more-link" href="#admit">View All →</a></div>
         </article>
 
         <article class="update-card purple-card" id="admission" data-nav-view="admission">
-          <div class="card-head"><span>🎓 Admission</span><a href="#admission">View All →</a></div>
+          <div class="card-head"><span>🎓 Admission</span></div>
           <ul class="post-list">
             <li>UG Admission 2025</li>
             <li>PG Admission 2025</li>
@@ -293,10 +287,11 @@
             <li><a href="https://lnmu.ac.in/" target="_blank" rel="noopener noreferrer">LNMU UG Admission 2026-30</a></li>
             <li><a href="https://deb.ugc.ac.in/" target="_blank" rel="noopener noreferrer">UGC ODL Online Application 2026-27</a></li>
           </ul>
+          <div class="card-footer"><a class="card-more-link" href="#admission">View All →</a></div>
         </article>
 
         <article class="update-card pink-card" id="scholarship" data-nav-view="scholarship">
-          <div class="card-head"><span>💰 Scholarship</span><a href="#scholarship">View All →</a></div>
+          <div class="card-head"><span>💰 Scholarship</span></div>
           <ul class="post-list">
             <li><a href="https://pmsonline.bih.nic.in/" target="_blank" rel="noopener noreferrer">Post Matric Scholarship 2025</a></li>
             <li><a href="https://scholarships.gov.in/" target="_blank" rel="noopener noreferrer">PM Yashasvi Scholarship</a></li>
@@ -304,10 +299,11 @@
             <li><a href="https://scholarships.gov.in/" target="_blank" rel="noopener noreferrer">National Scholarship Portal</a></li>
             <li><a href="https://medhasoft.bihar.gov.in/" target="_blank" rel="noopener noreferrer">Medha / Kanya Utthan Yojana</a></li>
           </ul>
+          <div class="card-footer"><a class="card-more-link" href="#scholarship">View All →</a></div>
         </article>
 
         <article class="update-card teal-card" id="yojana" data-nav-view="yojana">
-          <div class="card-head"><span>🏛 Sarkari Yojana</span><a href="#yojana">View All →</a></div>
+          <div class="card-head"><span>🏛 Sarkari Yojana</span></div>
           <ul class="post-list">
             <li>PM Kisan Samman Nidhi</li>
             <li>Ayushman Bharat Yojana</li>
@@ -315,12 +311,13 @@
             <li>Ujjwala Yojana</li>
             <li>Sukanya Samriddhi Yojana</li>
           </ul>
+          <div class="card-footer"><a class="card-more-link" href="#yojana">View All →</a></div>
         </article>
 
       
 
         <article class="update-card blue-card" id="bihar" data-nav-view="bihar">
-          <div class="card-head"><span>📰 Bihar News</span><a href="#bihar">View All →</a></div>
+          <div class="card-head"><span>📰 Bihar News</span></div>
           <ul class="post-list">
             <li>Bihar Board Exam 2025 Update</li>
             <li>Bihar Sarkar New Policy 2025</li>
@@ -328,17 +325,19 @@
             <li>Bihar Rojgar Mela 2025</li>
             <li>Bihar SHS Recruitment 2025</li>
           </ul>
+          <div class="card-footer"><a class="card-more-link" href="#bihar">View All →</a></div>
         </article>
 
         <article class="update-card red-card" id="career" data-nav-view="career">
-          <div class="card-head"><span>🚀 Career Guidance</span><a href="#career">View All →</a></div>
+          <div class="card-head"><span>🚀 Career Guidance</span></div>
           <ul class="post-list">
             <li>Career Options After 10th</li>
             <li>Career Options After 12th</li>
-            <li>Govt Job vs Private Job</li>
+            <li>Government Jobs vs. Private Jobs</li>
             <li>Best Courses After Graduation</li>
             <li>Competitive Exam Preparation Tips</li>
           </ul>
+          <div class="card-footer"><a class="card-more-link" href="#career">View All →</a></div>
         </article>
       </div>
 
@@ -532,7 +531,7 @@
      <img class="brand-logo" src="Untitled-1 copy.jpg" alt="Cyber Junction Logo">
       <div><h2>CYBER JUNCTION</h2><p>Latest Government Updates</p></div>
     </div>
-    <div><h3>Quick Links</h3><a href="#home">Home</a><a href="./customer-portal/" data-portal-link="true">Customer Login</a><a href="#about-us">About Us</a><a href="#contact-us">Contact Us</a><a href="#terms-and-conditions">Terms &amp; Conditions</a><a href="#">Privacy Policy</a></div>
+    <div><h3>Quick Links</h3><a href="#home">Home</a><a href="#about-us">About Us</a><a href="#contact-us">Contact Us</a><a href="#terms-and-conditions">Terms &amp; Conditions</a><a href="#">Privacy Policy</a></div>
     <div><h3>Important Pages</h3><a href="#jobs">Latest Jobs</a><a href="#results">Results</a><a href="#admit">Admit Card</a><a href="#admission">Admission</a><a href="#scholarship">Scholarship</a></div>
     <div>
       <h3>Social Media</h3>
