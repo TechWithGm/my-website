@@ -6,9 +6,10 @@ This project retains the Cyber Junction homepage layout and adds PHP/PostgreSQL 
 
 - Reusable, server-rendered article pages at `/{slug}/`, category pages at `/category/{slug}/`, and a generated `/sitemap.xml`.
 - Secure admin dashboard at `/admin/` with one-time first-admin setup, login/logout, article search and filters, draft/publish/unpublish, edit, delete confirmation, preview, featured articles, categories, and Latest Updates.
-- A **Quick Links** dashboard for the homepage button grid, with create, edit, delete, visibility, color and ordering controls, plus a **Homepage** editor for site text, branding, promotions, sidebar links, social links, service links, Bihar Bhoomi directory and curated Result / Admit Card / Latest Job lists.
+- A **Quick Links** dashboard for the homepage button grid, with create, edit, delete, visibility, color and ordering controls, plus a **Homepage** editor for site text, branding, promotions, sidebar links, social links, service links, Bihar Bhoomi directory and article-backed Result / Admit Card / Latest Job lists.
 - PostgreSQL schema and an explicitly labelled **draft-only** demonstration article. It contains no invented recruitment dates or eligibility data and is not visible publicly.
-- Published article content automatically populates the existing homepage category cards and Latest Updates. The existing homepage layout, navigation and contact form remain in place.
+- Published article content populates matching homepage cards and Latest Updates. The category-card grid is hidden without deleting its articles or links; the Result, Admit Card, Latest Job, Answer Key and other homepage lists keep their existing title-link display format and are managed from Articles by category. Bihar Bhoomi and RTPS services are grouped under the expandable Bihar Bhoomi panel near the top of the homepage. The homepage and managed article/category pages provide navigation to the visible homepage sections, with Quick Links and Important Pages restored in the footer.
+- The Popular Searches, Government Jobs All India, Latest News and Important Links sidebar cards are removed from the homepage.
 - Old article slugs redirect after a slug edit. Drafts, unpublished articles, future-dated articles and articles in inactive categories are excluded from public routes, search, homepage lists and the sitemap.
 
 ## Local setup on Windows
@@ -43,9 +44,9 @@ The PHP built-in server is not a production server. Keep it bound to localhost a
 
 ## Homepage content
 
-Open **Quick Links** in the admin dashboard to add, edit, delete, activate, hide, recolor and reorder up to 8 active buttons at the top of the homepage. The button design uses rectangular tiles with bold white text and olive, blue, orange, dark red, bright red, green, pink and royal blue colors, matching the supplied reference. The grid shows four columns on desktop and two on mobile. Open **Homepage** to edit the nine Result, Admit Card, Latest Job, Answer Key, Syllabus, Admission, Certificate, Offline/Outsourcing Job and Important cards. Add, edit, remove and reorder each card's links and change its heading there. Cards grow naturally with their content; published articles can be shown automatically per card when its matching category exists, or use curated links. Links accept internal paths or HTTPS URLs. Quick links are stored in the PostgreSQL `quick_links` table; section lists and other homepage settings use the `homepage_settings` JSONB record.
+Open **Quick Links** in the admin dashboard to add, edit, delete, activate, hide, recolor and reorder up to 8 active buttons at the top of the homepage. Choose a managed article in a Quick Link to populate its title and URL, and use **Manage article** beside recognized article links to open that article in the editor. **Manage articles** opens the complete article list. Custom internal paths and HTTPS URLs continue to work. The button design uses rectangular tiles with bold white text and olive, blue, orange, dark red, bright red, green, pink and royal blue colors, matching the supplied reference. The grid shows four columns on desktop and two on mobile. The nine homepage cards automatically show published articles in their matching categories. Create and edit those items in **Articles** by selecting Result, Admit Card, Latest Jobs, Answer Key, Syllabus, Admission, Certificate, Offline/Outsourcing Job or Important. The article form and article-page format remain unchanged. A card can still be switched to curated custom links from the Homepage editor. Quick links are stored in the PostgreSQL `quick_links` table; section settings use the `homepage_settings` JSONB record.
 
-For an existing database, re-run `backend/schema.sql` in the Supabase SQL Editor before deploying or using the Quick Links editor. The idempotent schema creates the `quick_links` table and imports any existing homepage quick links once, without overwriting saved homepage content.
+For an existing database, re-run `backend/schema.sql` in the Supabase SQL Editor before deploying or using the Quick Links editor. The idempotent schema creates the `quick_links` table, adds missing homepage article categories, imports any existing homepage quick links once, and switches the homepage lists to article-backed mode once while preserving other saved homepage content.
 
 ## Admin article fields
 
@@ -67,9 +68,9 @@ The article search includes title, category, short description and editor-suppli
 - [ ] Verify HTTPS, private database credentials, two independent random application/setup keys, enabled RLS on CMS tables and a server-only database-owner account.
 - [ ] Confirm the first-admin setup is closed after use; test login, wrong-password throttling, idle session expiry, logout and rejection of missing/invalid CSRF tokens.
 - [ ] Create, preview, save draft, publish, edit, unpublish and delete an article. Confirm title/slug uniqueness, a slug-change 301 redirect and category updates.
-- [ ] Confirm draft/unpublished/future-dated/inactive-category articles do not appear in article routes, search, category pages, homepage cards or sitemap; verify unknown URLs return HTTP 404.
+- [ ] Confirm draft/unpublished/future-dated/inactive-category articles do not appear in article routes, search, category pages, homepage lists or sitemap; verify unknown URLs return HTTP 404.
 - [ ] Test all optional article fields empty and populated; verify links, tables, FAQs, related/previous-next articles, metadata, structured data and mobile layouts.
-- [ ] Test homepage text/link edits and list add/remove, category creation/deactivation, Latest Updates create/edit/hide/delete, search by title/category/keyword, the contact form and homepage navigation.
+- [ ] Test homepage text/link edits and list add/remove, category creation/deactivation, Latest Updates create/edit/hide/delete, search by title/category/keyword, the contact form and homepage section links.
 - [ ] Check PHP and web-server logs after invalid input and failed database connections; verify errors do not reveal stack traces or credentials to public responses.
 
 This source tree has no bundled PHP/PostgreSQL server. Runtime database, admin-authentication and Apache rewrite tests must be run after installing/configuring the local stack or deploying to the target PHP host.

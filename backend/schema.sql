@@ -183,7 +183,12 @@ VALUES
   ('jobs', 'Latest Jobs', '▣', 'blue', 1, 1, 1, 10),
   ('results', 'Results', '▤', 'green', 1, 1, 1, 20),
   ('admit', 'Admit Card', '🎟', 'orange', 1, 1, 1, 30),
+  ('answer-key', 'Answer Key', '🗝', 'orange', 0, 0, 1, 31),
+  ('syllabus', 'Syllabus', '📚', 'purple', 0, 0, 1, 32),
   ('admission', 'Admission', '🎓', 'purple', 1, 1, 1, 40),
+  ('certificate', 'Certificate', '📄', 'blue', 0, 0, 1, 41),
+  ('offline-outsourcing-job', 'Offline/Outsourcing Job', '💼', 'green', 0, 0, 1, 42),
+  ('important', 'Important', '📌', 'teal', 0, 0, 1, 43),
   ('scholarship', 'Scholarship', '💰', 'pink', 1, 1, 1, 50),
   ('yojana', 'Government Schemes', '🏛', 'teal', 1, 1, 1, 60),
   ('bihar', 'Bihar News', '📰', 'blue', 1, 1, 1, 70),
@@ -195,6 +200,30 @@ VALUES
   ('popular-searches', 'Popular Searches', '⌕', 'orange', 0, 1, 1, 130),
   ('bihar-bhoomi', 'Bihar Bhoomi', '🌾', 'green', 0, 1, 1, 140)
 ON CONFLICT (slug) DO NOTHING;
+
+UPDATE homepage_settings
+SET content = jsonb_set(
+  content,
+  '{homeLayout}',
+  COALESCE(content->'homeLayout', '{}'::jsonb) || jsonb_build_object(
+    'articleCategoriesConnected', TRUE,
+    'useCustomLists',
+    COALESCE(content #> '{homeLayout,useCustomLists}', '{}'::jsonb) || jsonb_build_object(
+      'results', FALSE,
+      'admit', FALSE,
+      'jobs', FALSE,
+      'answerKey', FALSE,
+      'syllabus', FALSE,
+      'admission', FALSE,
+      'certificate', FALSE,
+      'offlineOutsourcingJob', FALSE,
+      'important', FALSE
+    )
+  ),
+  TRUE
+)
+WHERE id = 1
+  AND COALESCE(content #>> '{homeLayout,articleCategoriesConnected}', 'false') <> 'true';
 
 INSERT INTO quick_links (title, url, bg_color, text_color, position_order, is_active)
 SELECT

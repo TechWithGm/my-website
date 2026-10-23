@@ -27,7 +27,7 @@ function cj_article_not_found(PDO $db, array $categories = []): never
       <link rel="stylesheet" href="/style.css"><link rel="stylesheet" href="/article-page.css">
     </head>
     <body>
-      <?php cj_site_header($categories); ?>
+      <?php cj_site_header(); ?>
       <main class="public-page">
         <nav class="public-breadcrumb"><a href="/index.html#home">Home</a> / Page not found</nav>
         <section class="article-body not-found-card"><h1>404</h1><h2>Article not found</h2><p><?= cj_h($description) ?></p><a href="/index.html#home">Back to Cyber Junction</a></section>
@@ -185,7 +185,7 @@ try {
       <?php if ($faqStructuredData): ?><script type="application/ld+json" nonce="<?= cj_h($nonce) ?>"><?= json_encode($faqStructuredData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?></script><?php endif; ?>
     </head>
     <body>
-      <?php cj_site_header($categories); ?>
+      <?php cj_site_header(); ?>
       <main class="public-page">
         <nav class="public-breadcrumb" aria-label="Breadcrumb"><a href="/index.html#home">Home</a> / <a href="/category/<?= cj_h(rawurlencode($article['categorySlug'])) ?>/"><?= cj_h($article['category']) ?></a> / <?= cj_h($article['title']) ?></nav>
         <div class="article-layout">

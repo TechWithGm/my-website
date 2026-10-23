@@ -7,13 +7,8 @@ function cj_h(mixed $value): string
     return htmlspecialchars((string) $value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 }
 
-function cj_site_header(array $categories = []): void
+function cj_site_header(): void
 {
-    $primary = ['jobs', 'results', 'admit', 'admission', 'scholarship', 'yojana', 'bihar', 'career'];
-    $categoryMap = [];
-    foreach ($categories as $category) {
-        $categoryMap[$category['slug']] = $category;
-    }
     ?>
     <header class="site-header">
       <div class="top-header container">
@@ -31,40 +26,35 @@ function cj_site_header(array $categories = []): void
           </div>
           <div class="search-results" id="searchResults" role="listbox" aria-live="polite" hidden></div>
         </div>
-        <button class="menu-btn" id="menuBtn" type="button" aria-label="Menu" aria-expanded="false">☰</button>
       </div>
-      <nav class="main-nav" id="mainNav">
-        <div class="container nav-inner">
-          <a href="/index.html#home">⌂ Home</a>
-          <a href="/index.html#bihar-bhoomi">🌾 Bihar Bhoomi</a>
-          <a href="/index.html#jobs">▣ Latest Job</a>
-          <a href="/index.html#results">▤ Result</a>
-          <a href="/index.html#admit">🎟 Admit Card</a>
-          <a href="/index.html#admission">🎓 Admission</a>
-          <a href="/index.html#scholarship">💰 Scholarship</a>
-          <a href="/index.html#yojana">🏛 Yojna</a>
-          <a href="/index.html#bihar">📰 Bihar News</a>
-          <a href="/index.html#career">🚀 Career</a>
-          <div class="more-nav">
-            <button class="more-toggle" id="moreToggle" type="button" aria-expanded="false" aria-controls="moreMenu">☰ More</button>
-            <div class="more-menu" id="moreMenu" hidden>
-              <a href="/index.html#latest-news">Latest News</a>
-              <a href="/index.html#important-links">Important Links</a>
-              <a href="/index.html#popular-searches">Popular Searches</a>
-              <a href="/index.html#about">About Cyber Junction</a>
-              <a href="/index.html#about-us">About Us</a>
-              <a href="/index.html#contact-us">Contact Us</a>
-              <a href="/index.html#terms-and-conditions">Terms &amp; Conditions</a>
-              <?php foreach ($categories as $category): ?>
-                <?php if ((int) $category['nav_visible'] && (int) $category['is_active'] && !in_array($category['slug'], $primary, true) && $category['slug'] !== 'bihar-bhoomi'): ?>
-                  <a href="/category/<?= cj_h(rawurlencode($category['slug'])) ?>/"><?= cj_h($category['name']) ?></a>
-                <?php endif; ?>
-              <?php endforeach; ?>
-            </div>
+    </header>
+    <nav class="main-nav" aria-label="Homepage sections">
+      <div class="container nav-inner">
+        <div class="nav-primary-links">
+          <a href="/index.html#home">Home</a>
+          <a href="/index.html#bihar-bhoomi">Bihar Bhoomi</a>
+          <a href="/index.html#homeQuickLinks">Quick Links</a>
+          <a href="/index.html#aadhaar-services">Aadhaar Services</a>
+          <a href="/index.html#latestList">Latest Updates</a>
+          <a href="/index.html#homeResultsTitle">Result</a>
+        </div>
+        <div class="nav-more">
+          <button class="nav-more-toggle" type="button" aria-label="More sections" aria-expanded="false" aria-controls="navMoreLinks">
+            <span></span><span></span><span></span>
+          </button>
+          <div class="nav-more-menu" id="navMoreLinks" hidden>
+            <a href="/index.html#homeAdmitTitle">Admit Card</a>
+            <a href="/index.html#homeJobsTitle">Latest Job</a>
+            <a href="/index.html#homeAnswerKeyTitle">Answer Key</a>
+            <a href="/index.html#homeSyllabusTitle">Syllabus</a>
+            <a href="/index.html#homeAdmissionTitle">Admission</a>
+            <a href="/index.html#homeCertificateTitle">Certificate</a>
+            <a href="/index.html#homeOfflineOutsourcingJobTitle">Offline/Outsourcing Job</a>
+            <a href="/index.html#homeImportantTitle">Important</a>
           </div>
         </div>
-      </nav>
-    </header>
+      </div>
+    </nav>
     <?php
 }
 
@@ -77,9 +67,31 @@ function cj_site_footer(): void
           <img class="brand-logo" src="/Untitled-1%20copy.jpg" alt="Cyber Junction Logo">
           <div><h2>CYBER JUNCTION</h2><p>Latest Government Updates</p></div>
         </div>
-        <div><h3>Quick Links</h3><a href="/index.html#home">Home</a><a href="/index.html#about-us">About Us</a><a href="/index.html#contact-us">Contact Us</a><a href="/index.html#terms-and-conditions">Terms &amp; Conditions</a></div>
-        <div><h3>Important Pages</h3><a href="/index.html#jobs">Latest Jobs</a><a href="/index.html#results">Results</a><a href="/index.html#admit">Admit Card</a><a href="/index.html#admission">Admission</a><a href="/index.html#scholarship">Scholarship</a></div>
-        <div>
+        <div class="footer-quick-links-column">
+          <h3>Quick Links</h3>
+          <a href="/index.html#home">Home</a>
+          <a href="/index.html#bihar-bhoomi">Bihar Bhoomi Services</a>
+          <a href="/index.html#homeQuickLinks">Important Updates</a>
+          <a href="/index.html#aadhaar-services">Aadhaar Services</a>
+          <a href="/index.html#latestList">Latest Updates</a>
+          <a href="/about-us/">About Us</a>
+          <a href="/contact-us/">Contact Us</a>
+          <a href="/terms-and-conditions/">Terms &amp; Conditions</a>
+          <a href="/privacy-policy/">Privacy Policy</a>
+        </div>
+        <div class="footer-important-pages-column">
+          <h3>Important Pages</h3>
+          <a href="/index.html#homeResultsTitle">Results</a>
+          <a href="/index.html#homeAdmitTitle">Admit Card</a>
+          <a href="/index.html#homeJobsTitle">Latest Jobs</a>
+          <a href="/index.html#homeAnswerKeyTitle">Answer Key</a>
+          <a href="/index.html#homeSyllabusTitle">Syllabus</a>
+          <a href="/index.html#homeAdmissionTitle">Admission</a>
+          <a href="/index.html#homeCertificateTitle">Certificate</a>
+          <a href="/index.html#homeOfflineOutsourcingJobTitle">Offline/Outsourcing Jobs</a>
+          <a href="/index.html#homeImportantTitle">Important</a>
+        </div>
+        <div class="footer-social-column">
           <h3>Social Media</h3>
           <div class="footer-socials">
             <a class="social-link facebook" href="https://www.facebook.com/share/19aoTGscrA/" target="_blank" rel="noopener noreferrer" aria-label="Facebook"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13.5 22v-8h2.8l.4-3.2h-3.2V7.3c0-.9.3-1.6 1.7-1.6H17V2.7c-.4-.1-1.6-.2-3-.2-3 0-5 1.8-5 5.2v2.9H6.5V14h2.5v8h4.5z"/></svg></a>
@@ -89,7 +101,7 @@ function cj_site_footer(): void
             <a class="social-link email" href="mailto:akr325f@gmail.com" aria-label="Email"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6.5A2.5 2.5 0 0 1 5.5 4h13A2.5 2.5 0 0 1 21 6.5v11A2.5 2.5 0 0 1 18.5 20h-13A2.5 2.5 0 0 1 3 17.5v-11zm2 .3 7 5.2 7-5.2H5zm14.5 2.2-6.8 5.1a1 1 0 0 1-1.4 0L4.5 9v8.5c0 .3.2.5.5.5h13c.3 0 .5-.2.5-.5V9z"/></svg></a>
           </div>
         </div>
-        <div><h3>Subscribe for Updates</h3><div class="subscribe"><input type="email" placeholder="Enter your email" aria-label="Email for updates"><button type="button">Subscribe</button></div></div>
+        <div class="footer-subscribe-column"><h3>Subscribe for Updates</h3><div class="subscribe"><input type="email" placeholder="Enter your email" aria-label="Email for updates"><button type="button">Subscribe</button></div></div>
       </div>
       <div class="copyright"><div class="container"><span>© <?= date('Y') ?> Cyber Junction. All Rights Reserved.</span><span>Designed for a better tomorrow</span></div></div>
     </footer>

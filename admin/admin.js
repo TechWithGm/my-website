@@ -14,6 +14,7 @@
   let csrfToken = "";
   let categories = [];
   let articles = [];
+  let articleCatalog = [];
   let updates = [];
   let quickLinks = [];
   let homepageContent = {};
@@ -100,6 +101,7 @@
   }
 
   async function loadDashboard() {
+    await loadArticleCatalog();
     await Promise.all([loadCategories(), loadArticles(), loadUpdates(), loadQuickLinks(), loadHomepage()]);
   }
 
@@ -122,6 +124,12 @@
     const result = await request(`articles?${query}`);
     articles = result.data;
     renderArticles();
+  }
+
+  async function loadArticleCatalog() {
+    const result = await request("articles");
+    articleCatalog = result.data;
+    refreshQuickLinkArticleSelect();
   }
 
   async function loadUpdates() {
@@ -160,7 +168,7 @@
     if (!layout.useCustomLists || typeof layout.useCustomLists !== "object") layout.useCustomLists = {};
     if (!layout.columns || typeof layout.columns !== "object") layout.columns = {};
     sectionKeys.forEach((key) => {
-      layout.useCustomLists[key] = layout.useCustomLists[key] !== false;
+      layout.useCustomLists[key] = layout.useCustomLists[key] === true;
       if (!Array.isArray(layout.columns[key])) layout.columns[key] = [];
     });
     return layout;
@@ -177,6 +185,72 @@
     input.addEventListener("input", () => onInput(input.value));
     label.appendChild(input);
     return label;
+  }
+
+  function articlePath(article) {
+    return `/${encodeURIComponent(article.slug)}/`;
+  }
+
+  function articleForUrl(url) {
+    if (!url) return null;
+    try {
+      const parsed = new URL(url, window.location.origin);
+      if (parsed.origin !== window.location.origin) return null;
+      const path = decodeURIComponent(parsed.pathname).replace(/\/+$/, "");
+      return articleCatalog.find((article) => articlePath(article).replace(/\/+$/, "") === path) || null;
+    } catch {
+      return null;
+    }
+  }
+
+  function createArticlePicker(currentUrl, onSelect) {
+    const label = document.createElement("label");
+    label.className = "homepage-article-picker";
+    label.textContent = "Managed article";
+    const select = document.createElement("select");
+    const empty = document.createElement("option");
+    empty.value = "";
+    empty.textContent = "Choose an article or keep a custom URL";
+    select.appendChild(empty);
+    articleCatalog.forEach((article) => {
+      const option = document.createElement("option");
+      option.value = String(article.id);
+      option.textContent = `${article.title} (${article.status})`;
+      select.appendChild(option);
+    });
+    const current = articleForUrl(currentUrl);
+    if (current) select.value = String(current.id);
+    select.addEventListener("change", () => {
+      const selected = articleCatalog.find((article) => String(article.id) === select.value) || null;
+      if (selected) onSelect(selected);
+    });
+    label.appendChild(select);
+    return label;
+  }
+
+  function refreshQuickLinkArticleSelect() {
+    const form = document.getElementById("quickLinkForm");
+    if (!form) return;
+    const select = form.elements.articleId;
+    const selectedArticle = articleForUrl(form.elements.url.value);
+    select.replaceChildren();
+    const empty = document.createElement("option");
+    empty.value = "";
+    empty.textContent = "Choose an article or keep a custom URL";
+    select.appendChild(empty);
+    articleCatalog.forEach((article) => {
+      const option = document.createElement("option");
+      option.value = String(article.id);
+      option.textContent = `${article.title} (${article.status})`;
+      select.appendChild(option);
+    });
+    if (selectedArticle) select.value = String(selectedArticle.id);
+  }
+
+  function appendManageArticleAction(actions, url) {
+    const article = articleForUrl(url);
+    if (!article) return;
+    actions.appendChild(makeAction("Manage article", () => openManagedArticle(article)));
   }
 
   function renderHomepageLinkList(parent, { key, title, description, categoryId = "" }) {
@@ -212,7 +286,7 @@
         renderHomepageLayoutEditor();
       });
       const labelText = document.createElement("span");
-      labelText.textContent = "Automatically show published articles in this category";
+      labelText.textContent = "Automatically show published articles from this category";
       automaticLabel.append(checkbox, labelText);
       heading.appendChild(automaticLabel);
     }
@@ -228,12 +302,19 @@
       entry.className = "homepage-link-entry";
       const fields = document.createElement("div");
       fields.className = "homepage-link-fields";
+      const titleInput = createHomepageLinkInput("Link title", typeof current.title === "string" ? current.title : "", "Enter link text", (value) => {
+        current.title = value;
+      });
+      const urlInput = createHomepageLinkInput("Link URL", typeof current.url === "string" ? current.url : "", "https://... or /internal-path", (value) => {
+        current.url = value;
+      });
       fields.append(
-        createHomepageLinkInput("Link title", typeof current.title === "string" ? current.title : "", "Enter link text", (value) => {
-          current.title = value;
-        }),
-        createHomepageLinkInput("Link URL", typeof current.url === "string" ? current.url : "", "https://... or /internal-path", (value) => {
-          current.url = value;
+        titleInput,
+        urlInput,
+        createArticlePicker(current.url, (article) => {
+          current.title = article.title;
+          current.url = articlePath(article);
+          renderHomepageLayoutEditor();
         })
       );
 
@@ -255,6 +336,7 @@
         list.splice(index, 1);
         renderHomepageLayoutEditor();
       }, "quiet-button");
+      appendManageArticleAction(actions, current.url);
       actions.append(moveUp, moveDown, remove);
       entry.append(fields, actions);
       entries.appendChild(entry);
@@ -620,6 +702,7 @@
         toggle,
         makeAction("Delete", () => deleteQuickLink(link), "delete-action")
       );
+      appendManageArticleAction(actions, link.url);
       actionCell.appendChild(actions);
       row.append(previewCell, url, visibility, order, actionCell);
       rows.appendChild(row);
@@ -714,12 +797,46 @@
 
   async function editArticle(id) {
     try {
-      const article = articles.find((item) => item.id === id);
-      if (!article) throw new Error("Article not found in the current list.");
+      const article = articleCatalog.find((item) => item.id === id) || articles.find((item) => item.id === id);
+      if (!article) throw new Error("Article not found in the article catalog.");
       articleToForm(article);
       document.getElementById("articleFormTitle").textContent = "Edit article";
       document.getElementById("unpublishArticleButton").hidden = false;
       articleDialog.showModal();
+    } catch (error) {
+      showMessage(dashboardMessage, error.message);
+    }
+  }
+
+  function activatePanel(panelId) {
+    document.querySelectorAll(".tab-button").forEach((tab) => {
+      tab.classList.toggle("active", tab.dataset.panel === panelId);
+    });
+    document.querySelectorAll(".manager-panel").forEach((panel) => {
+      panel.hidden = panel.id !== panelId;
+    });
+  }
+
+  async function openManagedArticle(article) {
+    activatePanel("articlesPanel");
+    document.getElementById("articleQuery").value = "";
+    document.getElementById("articleCategoryFilter").value = "";
+    document.getElementById("articleStatusFilter").value = "";
+    try {
+      await loadArticles();
+      await editArticle(article.id);
+    } catch (error) {
+      showMessage(dashboardMessage, error.message);
+    }
+  }
+
+  async function openArticleManager() {
+    activatePanel("articlesPanel");
+    document.getElementById("articleQuery").value = "";
+    document.getElementById("articleCategoryFilter").value = "";
+    document.getElementById("articleStatusFilter").value = "";
+    try {
+      await loadArticles();
     } catch (error) {
       showMessage(dashboardMessage, error.message);
     }
@@ -750,7 +867,9 @@
       document.getElementById("articleFormTitle").textContent = "Edit article";
       document.getElementById("unpublishArticleButton").hidden = false;
       showMessage(dashboardMessage, status === "published" ? "Article published." : status === "unpublished" ? "Article unpublished." : "Draft saved.", false);
-      await loadArticles();
+      await Promise.all([loadArticles(), loadArticleCatalog()]);
+      renderHomepageLayoutEditor();
+      renderQuickLinks();
     } catch (error) {
       showMessage(errorElement, error.message);
     }
@@ -761,7 +880,9 @@
     try {
       await request(`articles/${article.id}`, { method: "DELETE" });
       showMessage(dashboardMessage, "Article deleted.", false);
-      await loadArticles();
+      await Promise.all([loadArticles(), loadArticleCatalog()]);
+      renderHomepageLayoutEditor();
+      renderQuickLinks();
     } catch (error) {
       showMessage(dashboardMessage, error.message);
     }
@@ -910,6 +1031,7 @@
     form.elements.id.value = link.id;
     form.elements.title.value = link.title;
     form.elements.url.value = link.url;
+    refreshQuickLinkArticleSelect();
     form.elements.bgColor.value = link.bg_color;
     form.elements.textColor.value = link.text_color;
     form.elements.positionOrder.value = Number(link.position_order);
@@ -922,6 +1044,7 @@
     const form = document.getElementById("quickLinkForm");
     form.reset();
     form.elements.id.value = "";
+    form.elements.articleId.value = "";
     form.elements.bgColor.value = "blue";
     form.elements.textColor.value = "white";
     form.elements.positionOrder.value = quickLinks.length
@@ -938,6 +1061,7 @@
     const data = formObject(form);
     data.positionOrder = Number(data.positionOrder || 0);
     data.isActive = form.elements.isActive.checked;
+    delete data.articleId;
     try {
       await request(currentQuickLinkId ? `quick-links/${currentQuickLinkId}` : "quick-links", {
         method: currentQuickLinkId ? "PUT" : "POST",
@@ -1010,7 +1134,6 @@
     form.elements.color.value = category.color || "blue";
     form.elements.sortOrder.value = category.sort_order;
     form.elements.homeVisible.checked = Boolean(Number(category.home_visible));
-    form.elements.navVisible.checked = Boolean(Number(category.nav_visible));
     form.elements.isActive.checked = Boolean(Number(category.is_active));
     document.getElementById("categoryFormTitle").textContent = `Edit ${category.name}`;
     form.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -1031,7 +1154,9 @@
     const data = formObject(form);
     if (currentCategorySlug) data.slug = currentCategorySlug;
     data.homeVisible = form.elements.homeVisible.checked;
-    data.navVisible = form.elements.navVisible.checked;
+    data.navVisible = currentCategorySlug
+      ? Boolean(Number(categories.find((category) => category.slug === currentCategorySlug)?.nav_visible))
+      : true;
     data.isActive = form.elements.isActive.checked;
     data.sortOrder = Number(data.sortOrder || 0);
     delete data.originalSlug;
@@ -1110,8 +1235,18 @@
     document.getElementById("quickLinkForm").hidden = false;
     document.getElementById("quickLinkFormTitle").textContent = "Add quick link";
   });
+  document.getElementById("manageQuickLinkArticlesButton").addEventListener("click", openArticleManager);
+  document.getElementById("manageHomepageArticlesButton").addEventListener("click", openArticleManager);
   document.getElementById("cancelQuickLinkButton").addEventListener("click", resetQuickLinkForm);
   document.getElementById("quickLinkForm").addEventListener("submit", saveQuickLink);
+  document.getElementById("quickLinkForm").elements.articleId.addEventListener("change", (event) => {
+    const article = articleCatalog.find((item) => String(item.id) === event.currentTarget.value);
+    if (!article) return;
+    const form = document.getElementById("quickLinkForm");
+    form.elements.title.value = article.title;
+    form.elements.url.value = articlePath(article);
+  });
+  document.getElementById("quickLinkForm").elements.url.addEventListener("input", refreshQuickLinkArticleSelect);
   document.getElementById("newCategoryButton").addEventListener("click", () => {
     resetCategoryForm();
     document.getElementById("categoryForm").hidden = false;
@@ -1128,10 +1263,7 @@
   document.getElementById("articleStatusFilter").addEventListener("change", () => loadArticles().catch((error) => showMessage(dashboardMessage, error.message)));
   document.querySelectorAll(".tab-button").forEach((button) => {
     button.addEventListener("click", () => {
-      document.querySelectorAll(".tab-button").forEach((tab) => tab.classList.toggle("active", tab === button));
-      document.querySelectorAll(".manager-panel").forEach((panel) => {
-        panel.hidden = panel.id !== button.dataset.panel;
-      });
+      activatePanel(button.dataset.panel);
     });
   });
 

@@ -4,9 +4,16 @@ const latestList = document.getElementById("latestList");
 const searchInput = document.getElementById("searchInput");
 const searchBtn = document.getElementById("searchBtn");
 const searchResults = document.getElementById("searchResults");
-const menuBtn = document.getElementById("menuBtn");
-const mainNav = document.getElementById("mainNav");
 const contactForm = document.getElementById("contactForm");
+const bhoomiExpandedContent = document.getElementById("bhoomiExpandedContent");
+const bhoomiRootPage = document.querySelector(".bhoomi-page");
+const rtpsServicesCard = document.querySelector(".rtps-services-card");
+if (bhoomiExpandedContent && bhoomiRootPage) {
+  bhoomiExpandedContent.insertBefore(bhoomiRootPage, bhoomiExpandedContent.firstChild);
+  bhoomiRootPage.hidden = false;
+  const rtpsServicesWrap = bhoomiExpandedContent.querySelector(".bhoomi-rtps-wrap");
+  if (rtpsServicesWrap && rtpsServicesCard) rtpsServicesWrap.appendChild(rtpsServicesCard);
+}
 const contactApiUrl =
   window.location.protocol === "file:"
     ? "http://localhost:5000/api/contact"
@@ -178,47 +185,6 @@ function renderManagedCategory(category, items) {
   items.forEach((post) => appendSafeLink(container, post));
 }
 
-function bindNavigationLink(link) {
-  if (link.dataset.navigationBound) return;
-  link.dataset.navigationBound = "true";
-  link.addEventListener("click", () => {
-    setNavigationView(link.dataset.navView);
-    mainNav.classList.remove("open");
-  });
-}
-
-function renderManagedNavigation(categories, pages) {
-  const moreMenu = document.getElementById("moreMenu");
-  const pageNames = new Map(pages.map((page) => [page.slug, page.title]));
-  moreMenu.querySelectorAll("[data-nav-view]").forEach((link) => {
-    const title = pageNames.get(link.dataset.navView);
-    if (title) link.textContent = title;
-  });
-
-  categories.forEach((category) => {
-    const existing = document.querySelector(
-      `.nav-inner [data-nav-view="${category.id}"], .more-menu [data-nav-view="${category.id}"]`
-    );
-    if (!category.navVisible) {
-      if (existing) existing.hidden = true;
-      return;
-    }
-    if (existing) {
-      existing.hidden = false;
-      existing.textContent = `${category.icon} ${category.name}`;
-      return;
-    }
-    const link = document.createElement("a");
-    link.href = category.url;
-    link.textContent = `${category.icon} ${category.name}`;
-    moreMenu.appendChild(link);
-  });
-
-  categories.forEach(({ id }) => navigationViews.add(id));
-  document.querySelectorAll(".nav-inner [data-nav-view], .more-menu [data-nav-view]")
-    .forEach(bindNavigationLink);
-}
-
 function applyManagedPages(pages) {
   pages.forEach((page) => {
     if (!page.isCustomized) return;
@@ -289,7 +255,21 @@ function applyManagedPages(pages) {
 
 function homepageHref(value, fallback = "#") {
   if (typeof value !== "string") return fallback;
-  const href = value.trim();
+  const rawHref = value.trim();
+  const legacyHomepageLinks = {
+    "#jobs": "#homeJobsTitle",
+    "#results": "#homeResultsTitle",
+    "#admit": "#homeAdmitTitle",
+    "#admission": "#homeAdmissionTitle",
+    "#scholarship": "#homeAdmissionTitle",
+    "#yojana": "#homeImportantTitle",
+    "#latest-news": "#latestList",
+    "#about-us": "/about-us/",
+    "#contact-us": "/contact-us/",
+    "#terms-and-conditions": "/terms-and-conditions/",
+    "#privacy-policy": "/privacy-policy/",
+  };
+  const href = legacyHomepageLinks[rawHref.toLowerCase()] || rawHref;
   if (/^https:\/\//i.test(href) || /^mailto:[^\s]+$/i.test(href)
     || /^\/(?!\/)/.test(href) || /^#[a-z0-9_-]+$/i.test(href)) {
     return href;
@@ -368,7 +348,7 @@ function renderHomeLayout(settings, items = [], homeArticles = {}) {
 
 function renderHomepageLinks(container, links, className = "") {
   if (!container || !Array.isArray(links)) return;
-  const heading = container.querySelector(":scope > .side-title");
+  const heading = container.querySelector(":scope > .side-title, :scope > h3");
   container.replaceChildren();
   if (heading) container.appendChild(heading);
   links.forEach((item) => {
@@ -457,10 +437,6 @@ function applyHomepageContent(settings) {
   const navigation = settings.navigation || {};
   const searchInput = document.getElementById("searchInput");
   const searchButton = document.getElementById("searchBtn");
-  const menuButton = document.getElementById("menuBtn");
-  const homeLink = document.querySelector(".nav-inner [data-nav-view='home']");
-  const bhoomiNavLink = document.querySelector(".nav-inner [data-nav-view='bihar-bhoomi']");
-  const moreToggle = document.getElementById("moreToggle");
   if (searchInput) {
     if (typeof navigation.searchPlaceholder === "string") searchInput.placeholder = navigation.searchPlaceholder;
     if (typeof navigation.searchLabel === "string") searchInput.setAttribute("aria-label", navigation.searchLabel);
@@ -469,27 +445,6 @@ function applyHomepageContent(settings) {
     if (typeof navigation.searchButtonLabel === "string") searchButton.textContent = navigation.searchButtonLabel;
     if (typeof navigation.searchLabel === "string") searchButton.setAttribute("aria-label", navigation.searchLabel);
   }
-  if (menuButton && typeof navigation.menuLabel === "string") menuButton.setAttribute("aria-label", navigation.menuLabel);
-  if (homeLink) {
-    if (typeof navigation.homeLabel === "string") homeLink.textContent = navigation.homeLabel;
-    homeLink.href = homepageHref(navigation.homeUrl, homeLink.href);
-  }
-  if (bhoomiNavLink) {
-    if (typeof navigation.bhoomiLabel === "string") bhoomiNavLink.textContent = navigation.bhoomiLabel;
-    bhoomiNavLink.href = homepageHref(navigation.bhoomiUrl, bhoomiNavLink.href);
-  }
-  if (moreToggle && typeof navigation.moreLabel === "string") moreToggle.textContent = navigation.moreLabel;
-  if (Array.isArray(navigation.moreLinks)) {
-    navigation.moreLinks.forEach((item) => {
-      if (!item || typeof item.view !== "string") return;
-      const link = Array.from(document.querySelectorAll(".more-menu [data-nav-view]"))
-        .find((candidate) => candidate.dataset.navView === item.view);
-      if (!link) return;
-      if (typeof item.title === "string") link.textContent = item.title;
-      link.href = homepageHref(item.url, link.href);
-    });
-  }
-
   const hero = settings.hero || {};
   const heroRoot = document.querySelector(".hero-blue");
   if (heroRoot) {
@@ -523,7 +478,6 @@ function applyHomepageContent(settings) {
     if (badge && typeof bhoomiCard.badge === "string") badge.textContent = bhoomiCard.badge;
     if (title && typeof bhoomiCard.title === "string") title.textContent = bhoomiCard.title;
     if (description && typeof bhoomiCard.description === "string") description.textContent = bhoomiCard.description;
-    bhoomiRoot.href = homepageHref(bhoomiCard.url, "#bihar-bhoomi");
     if (button && typeof bhoomiCard.buttonLabel === "string") {
       button.replaceChildren(document.createTextNode(bhoomiCard.buttonLabel));
       const arrow = document.createElement("b");
@@ -541,21 +495,19 @@ function applyHomepageContent(settings) {
     renderHomepageLinks(aadhaarRoot.querySelector(".post-list"), aadhaar.items);
   }
 
-  const promos = Array.isArray(settings.promos) ? settings.promos : [];
-  [document.querySelector(".left-sidebar .promo"), document.querySelector(".right-sidebar .promo")]
-    .forEach((promo, index) => {
-      const content = promos[index];
-      if (!promo || !content) return;
-      const icon = promo.querySelector(".promo-icon");
-      const title = promo.querySelector("h3");
-      const button = promo.querySelector(".yellow-btn");
-      if (icon && typeof content.icon === "string") icon.textContent = content.icon;
-      if (title && typeof content.title === "string") title.textContent = content.title;
-      if (button) {
-        if (typeof content.buttonLabel === "string") button.textContent = content.buttonLabel;
-        button.href = homepageHref(content.buttonUrl);
-      }
-    });
+  const promo = document.querySelector(".left-sidebar .promo");
+  const promoContent = Array.isArray(settings.promos) ? settings.promos[0] : null;
+  if (promo && promoContent) {
+    const icon = promo.querySelector(".promo-icon");
+    const title = promo.querySelector("h3");
+    const button = promo.querySelector(".yellow-btn");
+    if (icon && typeof promoContent.icon === "string") icon.textContent = promoContent.icon;
+    if (title && typeof promoContent.title === "string") title.textContent = promoContent.title;
+    if (button) {
+      if (typeof promoContent.buttonLabel === "string") button.textContent = promoContent.buttonLabel;
+      button.href = homepageHref(promoContent.buttonUrl);
+    }
+  }
 
   const socials = settings.socialLinks;
   renderHomepageSocials(document.querySelector(".left-sidebar .socials"), socials);
@@ -666,7 +618,6 @@ function applyHomepageContent(settings) {
   }
 
   const bhoomiPage = settings.bhoomiPage || {};
-  const bhoomiRootPage = document.querySelector(".bhoomi-page");
   if (bhoomiRootPage) {
     const textFields = [
       [".bhoomi-eyebrow", "eyebrow"],
@@ -832,68 +783,23 @@ function applyHomepageContent(settings) {
     }
   }
 
-  const sidebar = settings.rightSidebar || {};
-  const latestNews = document.querySelector(".right-sidebar .news-side");
-  if (latestNews) {
-    const title = latestNews.querySelector(".side-title");
-    if (title && typeof sidebar.latestNewsTitle === "string") title.textContent = sidebar.latestNewsTitle;
-    Array.from(latestNews.children).forEach((child) => {
-      if (!child.classList.contains("side-title")) child.remove();
-    });
-    if (Array.isArray(sidebar.latestNews)) {
-      sidebar.latestNews.forEach((item) => {
-        if (!item || typeof item.title !== "string") return;
-        const link = document.createElement("a");
-        link.textContent = item.title;
-        const href = homepageHref(item.url, "");
-        if (href) link.href = href;
-        if (typeof item.displayDate === "string" && item.displayDate) {
-          const date = document.createElement("small");
-          date.textContent = item.displayDate;
-          link.appendChild(date);
-        }
-        if (href && /^https:\/\//i.test(link.href)) {
-          link.target = "_blank";
-          link.rel = "noopener noreferrer";
-        }
-        latestNews.appendChild(link);
-      });
-    }
-  }
-  const important = document.querySelector(".right-sidebar [data-nav-view='important-links']");
-  if (important) {
-    const title = important.querySelector(".side-title");
-    if (title && typeof sidebar.importantLinksTitle === "string") title.textContent = sidebar.importantLinksTitle;
-    const links = Array.isArray(sidebar.importantLinks)
-      ? sidebar.importantLinks.filter((item) => item && typeof item.title === "string").map((item) => ({ ...item, title: `${item.title} ›` }))
-      : sidebar.importantLinks;
-    renderHomepageLinks(important, links);
-  }
-  const popular = document.querySelector(".right-sidebar [data-nav-view='popular-searches']");
-  if (popular) {
-    const title = popular.querySelector(".side-title");
-    if (title && typeof sidebar.popularSearchesTitle === "string") title.textContent = sidebar.popularSearchesTitle;
-    const links = Array.isArray(sidebar.popularSearches)
-      ? sidebar.popularSearches.filter((item) => item && typeof item.title === "string").map((item) => ({ ...item, title: `› ${item.title}` }))
-      : sidebar.popularSearches;
-    renderHomepageLinks(popular, links);
-  }
-
   const footer = settings.footer || {};
   const footerTagline = document.querySelector(".footer-brand p");
   if (footerTagline && typeof footer.tagline === "string") footerTagline.textContent = footer.tagline;
-  const footerGroups = Array.from(document.querySelectorAll(".footer-grid > div"));
-  const quick = footerGroups[1];
-  const pages = footerGroups[2];
-  const socialsColumn = footerGroups[3];
-  const subscribe = footerGroups[4];
-  [[quick, footer.quickLinksTitle, footer.quickLinks], [pages, footer.importantPagesTitle, footer.importantPages]]
-    .forEach(([column, heading, links]) => {
-      if (!column) return;
-      const title = column.querySelector("h3");
-      if (title && typeof heading === "string") title.textContent = heading;
-      renderHomepageLinks(column, links);
-    });
+  const quickLinksColumn = document.querySelector(".footer-quick-links-column");
+  const importantPagesColumn = document.querySelector(".footer-important-pages-column");
+  const socialsColumn = document.querySelector(".footer-social-column");
+  const subscribe = document.querySelector(".footer-subscribe-column");
+  if (quickLinksColumn) {
+    const title = quickLinksColumn.querySelector("h3");
+    if (title && typeof footer.quickLinksTitle === "string") title.textContent = footer.quickLinksTitle;
+    renderHomepageLinks(quickLinksColumn, footer.quickLinks);
+  }
+  if (importantPagesColumn) {
+    const title = importantPagesColumn.querySelector("h3");
+    if (title && typeof footer.importantPagesTitle === "string") title.textContent = footer.importantPagesTitle;
+    renderHomepageLinks(importantPagesColumn, footer.importantPages);
+  }
   if (socialsColumn) {
     const title = socialsColumn.querySelector("h3");
     if (title && typeof footer.socialTitle === "string") title.textContent = footer.socialTitle;
@@ -938,7 +844,6 @@ async function loadManagedSiteContent() {
     applyHomepageContent(settings);
     renderHomeLayout(settings, items, content.homeArticles || {});
 
-    renderManagedNavigation(categories, pages || []);
     applyManagedPages(pages || []);
     categories.forEach((category) => {
       const existingCard = Array.from(document.querySelectorAll(".card-grid > article"))
@@ -960,7 +865,6 @@ async function loadManagedSiteContent() {
         const card = Array.from(cardGrid.children).find((element) => element.id === category.id);
         if (card) cardGrid.appendChild(card);
       });
-    setNavigationView(window.location.hash.slice(1));
   } catch (error) {
     console.error("Could not load managed site content:", error);
   }
@@ -1154,75 +1058,6 @@ searchInput.addEventListener("keydown", (event) => {
 });
 searchBtn.addEventListener("click", showSearchResults);
 
-menuBtn.addEventListener("click", () => {
-  const isOpen = mainNav.classList.toggle("open");
-  menuBtn.setAttribute("aria-expanded", String(isOpen));
-});
-
-const moreToggle = document.getElementById("moreToggle");
-const moreMenu = document.getElementById("moreMenu");
-const navigationViews = new Set([
-  "home",
-  "jobs",
-  "results",
-  "admit",
-  "admission",
-  "scholarship",
-  "yojana",
-  "bihar",
-  "career",
-  "latest-news",
-  "important-links",
-  "popular-searches",
-  "bihar-bhoomi",
-  "about",
-  "about-us",
-  "contact-us",
-  "terms-and-conditions"
-]);
-
-function setNavigationView(view) {
-  const selectedView = navigationViews.has(view) ? view : "home";
-  const homeSectionViews = ["about-us", "contact-us", "terms-and-conditions"];
-  const activeView = homeSectionViews.includes(selectedView) ? "home" : selectedView;
-  document.body.dataset.navView = activeView;
-  const customCard = Array.from(document.querySelectorAll(".card-grid > [data-managed-category]"))
-    .find((card) => card.dataset.managedCategory === selectedView);
-  document.querySelectorAll(".card-grid > [data-managed-category]").forEach((card) => {
-    card.style.display = customCard
-      ? card === customCard ? "block" : "none"
-      : "";
-  });
-
-  document.querySelectorAll(".nav-inner [data-nav-view]").forEach((link) => {
-    const isActive = link.dataset.navView === selectedView;
-    link.classList.toggle("is-active", isActive);
-    if (isActive) {
-      link.setAttribute("aria-current", "page");
-    } else {
-      link.removeAttribute("aria-current");
-    }
-  });
-
-  const moreIsActive = ["latest-news", "important-links", "popular-searches", "about", "about-us", "contact-us", "terms-and-conditions"].includes(selectedView);
-  moreToggle.classList.toggle("is-active", moreIsActive);
-  moreMenu.hidden = true;
-  moreToggle.setAttribute("aria-expanded", "false");
-}
-
-document.querySelectorAll(".nav-inner [data-nav-view]").forEach((link) => {
-  link.addEventListener("click", () => {
-    setNavigationView(link.dataset.navView);
-    mainNav.classList.remove("open");
-  });
-});
-
-moreToggle.addEventListener("click", () => {
-  const isExpanded = moreToggle.getAttribute("aria-expanded") === "true";
-  moreMenu.hidden = isExpanded;
-  moreToggle.setAttribute("aria-expanded", String(!isExpanded));
-});
-
 document.addEventListener("click", (event) => {
   const target = event.target instanceof Element ? event.target : null;
   const toggle = target?.closest(".certificate-service-toggle");
@@ -1289,16 +1124,31 @@ document.addEventListener("keydown", (event) => {
   });
 });
 
-window.addEventListener("hashchange", () => {
-  setNavigationView(window.location.hash.slice(1));
-});
-
 document.addEventListener("click", (event) => {
   if (!event.target.closest(".header-right")) searchResults.hidden = true;
+  const navMore = document.querySelector(".nav-more");
+  const navMoreToggle = document.querySelector(".nav-more-toggle");
+  const navMoreMenu = document.querySelector(".nav-more-menu");
+  if (!navMoreToggle || !navMoreMenu) return;
+  if (event.target.closest(".nav-more-toggle")) {
+    const open = navMoreToggle.getAttribute("aria-expanded") !== "true";
+    navMoreToggle.setAttribute("aria-expanded", String(open));
+    navMoreMenu.hidden = !open;
+  } else if (event.target.closest(".nav-more-menu a") || !navMore.contains(event.target)) {
+    navMoreToggle.setAttribute("aria-expanded", "false");
+    navMoreMenu.hidden = true;
+  }
+});
+document.addEventListener("keydown", (event) => {
+  if (event.key !== "Escape") return;
+  const navMoreToggle = document.querySelector(".nav-more-toggle");
+  const navMoreMenu = document.querySelector(".nav-more-menu");
+  if (!navMoreToggle || !navMoreMenu) return;
+  navMoreToggle.setAttribute("aria-expanded", "false");
+  navMoreMenu.hidden = true;
 });
 
 renderPosts();
-setNavigationView(window.location.hash.slice(1));
 renderHomeLayout({ homeLayout: { columns: {} } });
 loadManagedSiteContent();
 

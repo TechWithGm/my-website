@@ -1,25 +1,19 @@
 (() => {
   "use strict";
 
-  const menuButton = document.getElementById("menuBtn");
-  const mainNav = document.getElementById("mainNav");
-  const moreToggle = document.getElementById("moreToggle");
-  const moreMenu = document.getElementById("moreMenu");
   const searchInput = document.getElementById("searchInput");
   const searchButton = document.getElementById("searchBtn");
   const searchResults = document.getElementById("searchResults");
   const topButton = document.getElementById("topBtn");
+  const navMore = document.querySelector(".nav-more");
+  const navMoreToggle = document.querySelector(".nav-more-toggle");
+  const navMoreMenu = document.querySelector(".nav-more-menu");
 
-  menuButton?.addEventListener("click", () => {
-    const open = mainNav.classList.toggle("open");
-    menuButton.setAttribute("aria-expanded", String(open));
-  });
-
-  moreToggle?.addEventListener("click", () => {
-    const open = moreToggle.getAttribute("aria-expanded") !== "true";
-    moreMenu.hidden = !open;
-    moreToggle.setAttribute("aria-expanded", String(open));
-  });
+  function setNavMoreOpen(open) {
+    if (!navMoreToggle || !navMoreMenu) return;
+    navMoreToggle.setAttribute("aria-expanded", String(open));
+    navMoreMenu.hidden = !open;
+  }
 
   async function search() {
     const query = searchInput.value.trim();
@@ -78,13 +72,19 @@
     }
   });
   searchButton?.addEventListener("click", search);
+  navMoreToggle?.addEventListener("click", () => {
+    setNavMoreOpen(navMoreToggle.getAttribute("aria-expanded") !== "true");
+  });
+  navMoreMenu?.addEventListener("click", (event) => {
+    if (event.target.closest("a")) setNavMoreOpen(false);
+  });
 
   document.addEventListener("click", (event) => {
     if (!event.target.closest(".header-right")) searchResults.hidden = true;
-    if (!event.target.closest(".more-nav")) {
-      moreMenu.hidden = true;
-      moreToggle.setAttribute("aria-expanded", "false");
-    }
+    if (navMore && !navMore.contains(event.target)) setNavMoreOpen(false);
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") setNavMoreOpen(false);
   });
 
   window.addEventListener("scroll", () => {

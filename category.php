@@ -59,7 +59,7 @@ try {
       <link rel="stylesheet" href="/style.css"><link rel="stylesheet" href="/article-page.css">
     </head>
     <body>
-      <?php cj_site_header($categories); ?>
+      <?php cj_site_header(); ?>
       <main class="public-page">
         <nav class="public-breadcrumb" aria-label="Breadcrumb"><a href="/index.html#home">Home</a> / <?= cj_h($category['name'] ?? 'Category not found') ?></nav>
         <?php if (!$category): ?>

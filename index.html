@@ -33,36 +33,36 @@
       <div class="search-results" id="searchResults" role="listbox" aria-live="polite" hidden></div>
     </div>
 
-    <button class="menu-btn" id="menuBtn" type="button" aria-label="Menu" aria-expanded="false" aria-controls="mainNav">☰</button>
   </div>
+</header>
 
-  <nav class="main-nav" id="mainNav">
-    <div class="container nav-inner">
-      <a href="#home" data-nav-view="home">⌂ Home</a>
-      <a href="#bihar-bhoomi" data-nav-view="bihar-bhoomi">🌾 Bihar Bhoomi</a>
-      <a href="#jobs" data-nav-view="jobs">▣ Latest Jobs</a>
-      <a href="#results" data-nav-view="results">▤ Results</a>
-      <a href="#admit" data-nav-view="admit">🎟 Admit Card</a>
-      <a href="#admission" data-nav-view="admission">🎓 Admission</a>
-      <a href="#scholarship" data-nav-view="scholarship">💰 Scholarship</a>
-      <a href="#yojana" data-nav-view="yojana">🏛 Yojana</a>
-      <a href="#bihar" data-nav-view="bihar">📰 Bihar News</a>
-      <a href="#career" data-nav-view="career">🚀 Career</a>
-      <div class="more-nav">
-        <button class="more-toggle" id="moreToggle" type="button" aria-expanded="false" aria-controls="moreMenu">☰ More</button>
-        <div class="more-menu" id="moreMenu" hidden>
-          <a href="#latest-news" data-nav-view="latest-news">Latest News</a>
-          <a href="#important-links" data-nav-view="important-links">Important Links</a>
-          <a href="#popular-searches" data-nav-view="popular-searches">Popular Searches</a>
-          <a href="#about" data-nav-view="about">About Cyber Junction</a>
-          <a href="#about-us" data-nav-view="about-us">About Us</a>
-          <a href="#contact-us" data-nav-view="contact-us">Contact Us</a>
-          <a href="#terms-and-conditions" data-nav-view="terms-and-conditions">Terms &amp; Conditions</a>
-        </div>
+<nav class="main-nav" aria-label="Homepage sections">
+  <div class="container nav-inner">
+    <div class="nav-primary-links">
+      <a href="#home">Home</a>
+      <a href="#bihar-bhoomi">Bihar Bhoomi</a>
+      <a href="#homeQuickLinks">Quick Links</a>
+      <a href="#aadhaar-services">Aadhaar Services</a>
+      <a href="#latestList">Latest Updates</a>
+      <a href="#homeResultsTitle">Result</a>
+    </div>
+    <div class="nav-more">
+      <button class="nav-more-toggle" type="button" aria-label="More sections" aria-expanded="false" aria-controls="navMoreLinks">
+        <span></span><span></span><span></span>
+      </button>
+      <div class="nav-more-menu" id="navMoreLinks" hidden>
+        <a href="#homeAdmitTitle">Admit Card</a>
+        <a href="#homeJobsTitle">Latest Job</a>
+        <a href="#homeAnswerKeyTitle">Answer Key</a>
+        <a href="#homeSyllabusTitle">Syllabus</a>
+        <a href="#homeAdmissionTitle">Admission</a>
+        <a href="#homeCertificateTitle">Certificate</a>
+        <a href="#homeOfflineOutsourcingJobTitle">Offline/Outsourcing Job</a>
+        <a href="#homeImportantTitle">Important</a>
       </div>
     </div>
-  </nav>
-</header>
+  </div>
+</nav>
 
 <main id="home">
   <section class="hero container">
@@ -73,7 +73,7 @@
         <h2>सरकारी सेवाएं</h2>
         <p>Latest Government Job Updates</p>
         <div class="hero-actions">
-          <a class="yellow-btn" href="#jobs">View Latest Jobs →</a>
+          <a class="yellow-btn" href="#home-update-grid">View Latest Jobs →</a>
         </div>
       </div>
     </div>
@@ -85,15 +85,20 @@
     </div>
   </section>
 
-  <a class="home-bhoomi-card container" href="#bihar-bhoomi">
-    <span class="new-badge">✨ NEW</span>
-    <span class="home-bhoomi-icon" aria-hidden="true">🌾</span>
-    <span class="home-bhoomi-copy">
-      <strong>Bihar Bhoomi Services</strong>
-      <span>जमाबंदी, दाखिल-खारिज, भू-लगान और जमीन की अन्य आधिकारिक सेवाएँ एक ही जगह।</span>
-    </span>
-    <span class="home-bhoomi-cta">सेवाएँ देखें <b aria-hidden="true">→</b></span>
-  </a>
+  <details class="home-bhoomi-details" id="bihar-bhoomi">
+    <summary class="home-bhoomi-card container">
+      <span class="new-badge">✨ NEW</span>
+      <span class="home-bhoomi-icon" aria-hidden="true">🌾</span>
+      <span class="home-bhoomi-copy">
+        <strong>Bihar Bhoomi Services</strong>
+        <span>जमाबंदी, दाखिल-खारिज, भू-लगान और जमीन की अन्य आधिकारिक सेवाएँ एक ही जगह।</span>
+      </span>
+      <span class="home-bhoomi-cta">सेवाएँ देखें <b aria-hidden="true">→</b></span>
+    </summary>
+    <div class="home-bhoomi-expanded" id="bhoomiExpandedContent">
+      <div class="container bhoomi-rtps-wrap"></div>
+    </div>
+  </details>
 
   <section class="home-quick-links container" aria-labelledby="homeQuickLinksTitle">
     <h2 id="homeQuickLinksTitle" class="visually-hidden">Important Updates</h2>
@@ -102,7 +107,7 @@
 
   <section class="container layout">
     <aside class="left-sidebar">
-      <div class="side-card aadhaar-services-card">
+      <div class="side-card aadhaar-services-card" id="aadhaar-services">
 
 
         <div class="side-title"><span>आधार कार्ड </span><span class="aadhaar-services-title">सेवाएं</span></div>
@@ -126,7 +131,7 @@
       <div class="promo">
         <div class="promo-icon">📢</div>
         <h3>सभी सरकारी<br>योजना की जानकारी<br>एक ही जगह</h3>
-        <a href="#yojana" class="yellow-btn">Explore Now →</a>
+        <a href="#home-update-grid" class="yellow-btn">Explore Now →</a>
       </div>
 
       <div class="side-card social-card">
@@ -152,7 +157,7 @@
     </aside>
 
     <section class="content">
-      <section class="home-update-grid" aria-label="Latest results, admit cards and jobs">
+      <section class="home-update-grid" id="home-update-grid" aria-label="Latest results, admit cards and jobs">
         <article class="home-update-card">
           <h2 id="homeResultsTitle">Result</h2>
           <ul id="homeResultsList" class="home-update-list"></ul>
@@ -327,40 +332,6 @@
       </section>
     </section>
 
-    <aside class="right-sidebar">
-      <div class="side-card" data-nav-view="important-links">
-        <div class="side-title">🔗 Important Links</div>
-        <a href="https://upsc.gov.in/" target="_blank" rel="noopener noreferrer">UPSC Official Website <b>›</b></a>
-        <a href="https://bpsc.bih.nic.in/" target="_blank" rel="noopener noreferrer">BPSC Official Website <b>›</b></a>
-        <a href="https://www.rbi.org.in/" target="_blank" rel="noopener noreferrer">RBI Official Website <b>›</b></a>
-        <a href="https://ssc.gov.in/" target="_blank" rel="noopener noreferrer">SSC Official Website <b>›</b></a>
-        <a href="https://indianrailways.gov.in/" target="_blank" rel="noopener noreferrer">Railway Official Website <b>›</b></a>
-        <a href="https://csbc.bihar.gov.in/" target="_blank" rel="noopener noreferrer">Police Recruitment <b>›</b></a>
-        <a href="https://state.bihar.gov.in/" target="_blank" rel="noopener noreferrer">Bihar Govt Portal <b>›</b></a>
-        <a href="https://scholarships.gov.in/" target="_blank" rel="noopener noreferrer">National Scholarship Portal <b>›</b></a>
-      </div>
-
-      <div class="side-card news-side" data-nav-view="latest-news">
-        <div class="side-title">📰 Latest News <span class="new-badge">NEW</span></div>
-      </div>
-
-      <div class="promo small-promo">
-        <h3>Government Jobs<br>All India</h3>
-        <a href="#jobs" class="yellow-btn">Check Now →</a>
-      </div>
-
-      <div class="side-card" data-nav-view="popular-searches">
-        <div class="side-title">⌕ Popular Searches</div>
-        <a href="#">› Bihar Police</a>
-        <a href="#">› UPSC</a>
-        <a href="#">› JEE Main</a>
-        <a href="#">› Bihar Board</a>
-        <a href="#">› Scholarship</a>
-        <a href="#">› Railway</a>
-        <a href="#">› PM Kisan</a>
-        <a href="#">› Ayushman Bharat</a>
-      </div>
-    </aside>
   </section>
   <section class="container page-view" id="about-us" data-page-view="about-us">
     <div class="page-card">
@@ -414,7 +385,7 @@
       <p>You are responsible for checking official sources, meeting application requirements and making decisions based on information obtained from this website.</p>
     </div>
   </section>
-  <section class="container bhoomi-page" id="bihar-bhoomi" aria-labelledby="bhoomiTitle">
+  <section class="container bhoomi-page" id="bhoomiDirectory" aria-labelledby="bhoomiTitle" hidden>
     <header class="bhoomi-hero">
       <span class="bhoomi-eyebrow">BIHAR LAND &amp; REVENUE SERVICES</span>
       <span class="new-badge">✨ NEW</span>
@@ -498,9 +469,31 @@
      <img class="brand-logo" src="Untitled-1 copy.jpg" alt="Cyber Junction Logo">
       <div><h2>CYBER JUNCTION</h2><p>Latest Government Updates</p></div>
     </div>
-    <div><h3>Quick Links</h3><a href="#home">Home</a><a href="#about-us">About Us</a><a href="#contact-us">Contact Us</a><a href="#terms-and-conditions">Terms &amp; Conditions</a><a href="#">Privacy Policy</a></div>
-    <div><h3>Important Pages</h3><a href="#jobs">Latest Jobs</a><a href="#results">Results</a><a href="#admit">Admit Card</a><a href="#admission">Admission</a><a href="#scholarship">Scholarship</a></div>
-    <div>
+    <div class="footer-quick-links-column">
+      <h3>Quick Links</h3>
+      <a href="/index.html#home">Home</a>
+      <a href="/index.html#bihar-bhoomi">Bihar Bhoomi Services</a>
+      <a href="/index.html#homeQuickLinks">Important Updates</a>
+      <a href="/index.html#aadhaar-services">Aadhaar Services</a>
+      <a href="/index.html#latestList">Latest Updates</a>
+      <a href="/about-us/">About Us</a>
+      <a href="/contact-us/">Contact Us</a>
+      <a href="/terms-and-conditions/">Terms &amp; Conditions</a>
+      <a href="/privacy-policy/">Privacy Policy</a>
+    </div>
+    <div class="footer-important-pages-column">
+      <h3>Important Pages</h3>
+      <a href="/index.html#homeResultsTitle">Results</a>
+      <a href="/index.html#homeAdmitTitle">Admit Card</a>
+      <a href="/index.html#homeJobsTitle">Latest Jobs</a>
+      <a href="/index.html#homeAnswerKeyTitle">Answer Key</a>
+      <a href="/index.html#homeSyllabusTitle">Syllabus</a>
+      <a href="/index.html#homeAdmissionTitle">Admission</a>
+      <a href="/index.html#homeCertificateTitle">Certificate</a>
+      <a href="/index.html#homeOfflineOutsourcingJobTitle">Offline/Outsourcing Jobs</a>
+      <a href="/index.html#homeImportantTitle">Important</a>
+    </div>
+    <div class="footer-social-column">
       <h3>Social Media</h3>
       <div class="footer-socials">
         <a class="social-link facebook" href="https://www.facebook.com/share/19aoTGscrA/" target="_blank" rel="noopener noreferrer" aria-label="Facebook"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13.5 22v-8h2.8l.4-3.2h-3.2V7.3c0-.9.3-1.6 1.7-1.6H17V2.7c-.4-.1-1.6-.2-3-.2-3 0-5 1.8-5 5.2v2.9H6.5V14h2.5v8h4.5z"/></svg></a>
@@ -510,7 +503,7 @@
         <a class="social-link email" href="mailto:akr325f@gmail.com" aria-label="Email"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6.5A2.5 2.5 0 0 1 5.5 4h13A2.5 2.5 0 0 1 21 6.5v11A2.5 2.5 0 0 1 18.5 20h-13A2.5 2.5 0 0 1 3 17.5v-11zm2 .3 7 5.2 7-5.2H5zm14.5 2.2-6.8 5.1a1 1 0 0 1-1.4 0L4.5 9v8.5c0 .3.2.5.5.5h13c.3 0 .5-.2.5-.5V9z"/></svg></a>
       </div>
     </div>
-    <div><h3>Subscribe for Updates</h3><div class="subscribe"><input type="email" placeholder="Enter your email"><button>Subscribe</button></div></div>
+    <div class="footer-subscribe-column"><h3>Subscribe for Updates</h3><div class="subscribe"><input type="email" placeholder="Enter your email"><button>Subscribe</button></div></div>
   </div>
   <div class="copyright">
     <div class="container"><span>© 2026 Cyber Junction. All Rights Reserved.</span><span>Designed for a better tomorrow</span></div>

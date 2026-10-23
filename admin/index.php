@@ -76,9 +76,12 @@ header('Cache-Control: no-store');
       <section class="manager-panel" id="quickLinksPanel" hidden>
         <div class="panel-heading">
           <div><p class="eyebrow">HOMEPAGE BUTTON GRID</p><h1>Quick Links</h1></div>
-          <button class="primary-button" id="newQuickLinkButton" type="button">＋ New quick link</button>
+          <div class="panel-actions">
+            <button class="secondary-button" id="manageQuickLinkArticlesButton" type="button">Manage articles</button>
+            <button class="primary-button" id="newQuickLinkButton" type="button">＋ New quick link</button>
+          </div>
         </div>
-        <p class="muted">Manage up to 8 active colorful buttons at the top of the homepage. Set each label, URL, background and text color, visibility, and order.</p>
+        <p class="muted">Manage up to 8 active colorful buttons at the top of the homepage. Choose a managed article to fill its title and URL, or keep a custom link. Use Manage articles to edit any article.</p>
         <div class="table-scroll">
           <table><thead><tr><th>Button</th><th>URL</th><th>Visibility</th><th>Order</th><th>Actions</th></tr></thead><tbody id="quickLinkRows"></tbody></table>
         </div>
@@ -88,6 +91,7 @@ header('Cache-Control: no-store');
           <input name="id" type="hidden">
           <div class="form-grid">
             <label class="wide">Button text<input name="title" required maxlength="300"></label>
+            <label class="wide">Link to managed article<select name="articleId"><option value="">Choose an article or keep a custom URL</option></select></label>
             <label class="wide">Link URL (internal path or HTTPS URL)<input name="url" type="text" required maxlength="2048" placeholder="/jobs/ or https://example.com"></label>
             <label>Background color<select name="bgColor"><option value="olive">Olive</option><option value="blue" selected>Blue</option><option value="orange">Orange</option><option value="darkred">Dark red</option><option value="red">Bright red</option><option value="green">Green</option><option value="pink">Pink</option><option value="royalblue">Royal blue</option><option value="purple">Purple</option><option value="teal">Teal</option><option value="slate">Slate</option></select></label>
             <label>Text color<select name="textColor"><option value="white" selected>White</option><option value="dark">Dark</option></select></label>
@@ -127,7 +131,7 @@ header('Cache-Control: no-store');
           <div><p class="eyebrow">TAXONOMY</p><h1>Categories</h1></div>
           <button class="primary-button" id="newCategoryButton" type="button">＋ New category</button>
         </div>
-        <p class="muted">Categories already used by articles can be hidden from navigation or deactivated, but not deleted.</p>
+        <p class="muted">Categories already used by articles can be hidden from the homepage or deactivated, but not deleted.</p>
         <div class="category-grid" id="categoryCards"></div>
         <form class="editor-card compact-form" id="categoryForm" hidden>
           <h2 id="categoryFormTitle">Add category</h2>
@@ -139,7 +143,6 @@ header('Cache-Control: no-store');
             <label>Card colour<select name="color"><option>blue</option><option>green</option><option>orange</option><option>purple</option><option>pink</option><option>teal</option><option>red</option></select></label>
             <label>Sort order<input name="sortOrder" type="number" min="0" value="100"></label>
             <label class="check-label"><input name="homeVisible" type="checkbox" checked> Show on homepage</label>
-            <label class="check-label"><input name="navVisible" type="checkbox" checked> Show in navigation</label>
             <label class="check-label"><input name="isActive" type="checkbox" checked> Active</label>
           </div>
           <div class="form-actions"><button class="primary-button" type="submit">Save category</button><button class="quiet-button" id="cancelCategoryButton" type="button">Cancel</button></div>
@@ -149,8 +152,9 @@ header('Cache-Control: no-store');
       <section class="manager-panel" id="homepagePanel" hidden>
         <div class="panel-heading">
           <div><p class="eyebrow">SITE CONTENT</p><h1>Homepage</h1></div>
+          <button class="secondary-button" id="manageHomepageArticlesButton" type="button">Manage articles</button>
         </div>
-        <p class="muted">Manage the Result, Admit Card, and Latest Job lists here. Add, edit, remove, or reorder links, then select Save homepage. These link lists start empty.</p>
+        <p class="muted">Homepage cards automatically show published articles from their matching category. Manage article content and format in Articles; switch a card to custom links only when needed. Article form and article-page format are unchanged.</p>
         <div id="homeLayoutEditor" class="homepage-link-editor"></div>
         <div class="homepage-editor" id="homepageEditor"></div>
         <div class="form-actions"><button class="primary-button" id="saveHomepageButton" type="button">Save homepage</button></div>
