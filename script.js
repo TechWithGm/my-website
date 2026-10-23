@@ -93,32 +93,60 @@ function appendSafeLink(container, { title, url = "", displayDate = "", descript
   container.appendChild(link);
 }
 
+function appendArticleSummary(container, item, {
+  titleClass = "home-update-link",
+  readMoreClass = "home-update-read-more",
+  allowNoLink = false
+} = {}) {
+  if (!item || typeof item.title !== "string") return false;
+  const href = homepageHref(item.url, "");
+  if (!href && !allowNoLink) return false;
+
+  const title = document.createElement(href ? "a" : "span");
+  title.className = titleClass;
+  title.textContent = item.title;
+  if (href) title.href = href;
+  if (href && /^https:\/\//i.test(href)) {
+    title.target = item.isArticle ? "_self" : "_blank";
+    title.rel = item.isArticle ? "" : "noopener noreferrer";
+  }
+  container.appendChild(title);
+
+  if (typeof item.displayDate === "string" && item.displayDate) {
+    const date = document.createElement("small");
+    date.className = "home-update-date";
+    date.textContent = `Published: ${item.displayDate}`;
+    container.appendChild(date);
+  }
+  if (typeof item.description === "string" && item.description) {
+    const description = document.createElement("p");
+    description.className = "home-update-description";
+    description.textContent = item.description;
+    container.appendChild(description);
+  }
+  if (href) {
+    const readMore = document.createElement("a");
+    readMore.className = readMoreClass;
+    readMore.href = href;
+    readMore.textContent = "Read More →";
+    if (/^https:\/\//i.test(href)) {
+      readMore.target = item.isArticle ? "_self" : "_blank";
+      readMore.rel = item.isArticle ? "" : "noopener noreferrer";
+    }
+    container.appendChild(readMore);
+  }
+  return true;
+}
+
 function renderManagedCategory(category, items) {
   if (category.id === "latest-updates") {
     latestList.replaceChildren();
     items.forEach((post) => {
-      const item = document.createElement(post.url ? "a" : "div");
-      item.className = "latest-item";
-      if (post.url) {
-        item.href = post.url;
-        if (post.keywords) item.dataset.keywords = post.keywords;
-        if (post.isArticle) item.dataset.articleLink = "true";
-        if (/^https?:\/\//i.test(post.url)) {
-          item.target = "_blank";
-          item.rel = "noopener noreferrer";
-          if (post.isArticle) {
-            item.target = "_self";
-            item.rel = "";
-          }
-        }
-      }
-      const title = document.createElement("span");
-      title.className = "title";
-      title.textContent = post.title;
-      const date = document.createElement("span");
-      date.className = "date";
-      date.textContent = post.displayDate;
-      item.append(title, date);
+      const item = document.createElement("article");
+      item.className = "latest-item home-article-summary";
+      if (post.keywords) item.dataset.keywords = post.keywords;
+      if (post.isArticle) item.dataset.articleLink = "true";
+      appendArticleSummary(item, post, { titleClass: "title", readMoreClass: "read-more", allowNoLink: true });
       latestList.appendChild(item);
     });
     return;
@@ -261,7 +289,7 @@ function homepageHref(value, fallback = "#") {
     "#results": "#homeResultsTitle",
     "#admit": "#homeAdmitTitle",
     "#admission": "#homeAdmissionTitle",
-    "#scholarship": "#homeAdmissionTitle",
+    "#scholarship": "#homeScholarshipTitle",
     "#yojana": "#homeImportantTitle",
     "#latest-news": "#latestList",
     "#about-us": "/about-us/",
@@ -300,7 +328,8 @@ function renderHomeLayout(settings, items = [], homeArticles = {}) {
   const homeSections = [
     ["results", "results", "Result"],
     ["admit", "admit", "Admit Card"],
-    ["jobs", "jobs", "Latest Job"],
+    ["jobs", "jobs", "Government Jobs"],
+    ["scholarship", "scholarship", "Scholarships"],
     ["answerKey", "answer-key", "Answer Key"],
     ["syllabus", "syllabus", "Syllabus"],
     ["admission", "admission", "Admission"],
@@ -340,7 +369,8 @@ function renderHomeLayout(settings, items = [], homeArticles = {}) {
       : categoryItems;
     sourceItems.forEach((item) => {
       const entry = document.createElement("li");
-      if (!appendHomeLink(entry, item, "home-update-link")) return;
+      entry.className = "home-update-entry home-article-summary";
+      if (!appendArticleSummary(entry, item)) return;
       list.appendChild(entry);
     });
   });

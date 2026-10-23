@@ -45,6 +45,7 @@ function cj_site_header(): void
           <div class="nav-more-menu" id="navMoreLinks" hidden>
             <a href="/index.html#homeAdmitTitle">Admit Card</a>
             <a href="/index.html#homeJobsTitle">Latest Job</a>
+            <a href="/index.html#homeScholarshipTitle">Scholarships</a>
             <a href="/index.html#homeAnswerKeyTitle">Answer Key</a>
             <a href="/index.html#homeSyllabusTitle">Syllabus</a>
             <a href="/index.html#homeAdmissionTitle">Admission</a>
@@ -84,6 +85,7 @@ function cj_site_footer(): void
           <a href="/index.html#homeResultsTitle">Results</a>
           <a href="/index.html#homeAdmitTitle">Admit Card</a>
           <a href="/index.html#homeJobsTitle">Latest Jobs</a>
+          <a href="/index.html#homeScholarshipTitle">Scholarships</a>
           <a href="/index.html#homeAnswerKeyTitle">Answer Key</a>
           <a href="/index.html#homeSyllabusTitle">Syllabus</a>
           <a href="/index.html#homeAdmissionTitle">Admission</a>

@@ -22,6 +22,19 @@
   let currentQuickLinkId = null;
   let currentCategorySlug = null;
   let refreshTimer;
+  const homepageTabs = [
+    ["latest-updates", "Latest Updates"],
+    ["jobs", "Government Jobs"],
+    ["scholarship", "Scholarships"],
+    ["admit", "Admit Card"],
+    ["results", "Results"],
+    ["answer-key", "Answer Key"],
+    ["syllabus", "Syllabus"],
+    ["admission", "Admissions"],
+    ["certificate", "Certificate"],
+    ["offline-outsourcing-job", "Offline/Outsourcing Jobs"],
+    ["important", "Important"],
+  ];
 
   function showMessage(element, message, isError = true) {
     element.textContent = message || "";
@@ -158,7 +171,7 @@
     const layout = homepageContent.homeLayout;
     if (!layout.titles || typeof layout.titles !== "object") layout.titles = {};
     const sectionKeys = [
-      "results", "admit", "jobs", "answerKey", "syllabus",
+      "results", "admit", "jobs", "scholarship", "answerKey", "syllabus",
       "admission", "certificate", "offlineOutsourcingJob", "important"
     ];
     ["quickLinks", ...sectionKeys].forEach((key) => {
@@ -360,6 +373,7 @@
       ["results", "Result", "results"],
       ["admit", "Admit Card", "admit"],
       ["jobs", "Latest Job", "jobs"],
+      ["scholarship", "Scholarships", "scholarship"],
       ["answerKey", "Answer Key", "answer-key"],
       ["syllabus", "Syllabus", "syllabus"],
       ["admission", "Admission", "admission"],
@@ -718,7 +732,10 @@
       const title = document.createElement("h3");
       title.textContent = `${category.icon || ""} ${category.name}`.trim();
       const summary = document.createElement("p");
-      summary.textContent = `/${category.slug}/ · ${Number(category.is_active) ? "Active" : "Inactive"}`;
+      const mappedTabs = homepageTabs
+        .filter(([slug]) => Array.isArray(category.home_tabs) && category.home_tabs.includes(slug))
+        .map(([, label]) => label);
+      summary.textContent = `/${category.slug}/ · ${Number(category.is_active) ? "Active" : "Inactive"} · Homepage: ${mappedTabs.join(", ") || "None"}`;
       const actions = document.createElement("div");
       actions.className = "row-actions";
       actions.appendChild(makeAction("Edit", () => editCategory(category)));
@@ -1135,6 +1152,7 @@
     form.elements.sortOrder.value = category.sort_order;
     form.elements.homeVisible.checked = Boolean(Number(category.home_visible));
     form.elements.isActive.checked = Boolean(Number(category.is_active));
+    renderCategoryHomeTabs(category.home_tabs || []);
     document.getElementById("categoryFormTitle").textContent = `Edit ${category.name}`;
     form.scrollIntoView({ behavior: "smooth", block: "center" });
   }
@@ -1144,6 +1162,7 @@
     form.reset();
     form.elements.slug.disabled = false;
     form.elements.sortOrder.value = 100;
+    renderCategoryHomeTabs([]);
     currentCategorySlug = null;
     form.hidden = true;
   }
@@ -1158,6 +1177,7 @@
       ? Boolean(Number(categories.find((category) => category.slug === currentCategorySlug)?.nav_visible))
       : true;
     data.isActive = form.elements.isActive.checked;
+    data.homeTabs = Array.from(form.querySelectorAll("input[name='homeTabs']:checked"), (input) => input.value);
     data.sortOrder = Number(data.sortOrder || 0);
     delete data.originalSlug;
     try {
@@ -1171,6 +1191,26 @@
     } catch (error) {
       showMessage(dashboardMessage, error.message);
     }
+  }
+
+  function renderCategoryHomeTabs(selectedTabs) {
+    const container = document.getElementById("categoryHomeTabs");
+    if (!container) return;
+    const selected = new Set(selectedTabs);
+    container.replaceChildren();
+    homepageTabs.forEach(([slug, label]) => {
+      const wrapper = document.createElement("label");
+      wrapper.className = "check-label";
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.name = "homeTabs";
+      checkbox.value = slug;
+      checkbox.checked = selected.has(slug);
+      const text = document.createElement("span");
+      text.textContent = label;
+      wrapper.append(checkbox, text);
+      container.appendChild(wrapper);
+    });
   }
 
   async function submitLogin(event) {
@@ -1249,6 +1289,7 @@
   document.getElementById("quickLinkForm").elements.url.addEventListener("input", refreshQuickLinkArticleSelect);
   document.getElementById("newCategoryButton").addEventListener("click", () => {
     resetCategoryForm();
+    renderCategoryHomeTabs(["latest-updates"]);
     document.getElementById("categoryForm").hidden = false;
     document.getElementById("categoryFormTitle").textContent = "Add category";
   });

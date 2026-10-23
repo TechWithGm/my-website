@@ -2,6 +2,23 @@
 
 declare(strict_types=1);
 
+function cj_home_tab_definitions(): array
+{
+    return [
+        'latest-updates' => 'Latest Updates',
+        'results' => 'Results',
+        'admit' => 'Admit Card',
+        'jobs' => 'Government Jobs',
+        'scholarship' => 'Scholarships',
+        'answer-key' => 'Answer Key',
+        'syllabus' => 'Syllabus',
+        'admission' => 'Admissions',
+        'certificate' => 'Certificate',
+        'offline-outsourcing-job' => 'Offline/Outsourcing Jobs',
+        'important' => 'Important',
+    ];
+}
+
 function cj_homepage_defaults(): array
 {
     return [
@@ -55,6 +72,7 @@ function cj_homepage_defaults(): array
                 'results' => 'Result',
                 'admit' => 'Admit Card',
                 'jobs' => 'Latest Job',
+                'scholarship' => 'Scholarships',
                 'answerKey' => 'Answer Key',
                 'syllabus' => 'Syllabus',
                 'admission' => 'Admission',
@@ -68,6 +86,7 @@ function cj_homepage_defaults(): array
                 'results' => false,
                 'admit' => false,
                 'jobs' => false,
+                'scholarship' => false,
                 'answerKey' => false,
                 'syllabus' => false,
                 'admission' => false,
@@ -79,6 +98,7 @@ function cj_homepage_defaults(): array
                 'results' => [],
                 'admit' => [],
                 'jobs' => [],
+                'scholarship' => [],
                 'answerKey' => [],
                 'syllabus' => [],
                 'admission' => [],

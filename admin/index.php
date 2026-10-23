@@ -131,7 +131,7 @@ header('Cache-Control: no-store');
           <div><p class="eyebrow">TAXONOMY</p><h1>Categories</h1></div>
           <button class="primary-button" id="newCategoryButton" type="button">＋ New category</button>
         </div>
-        <p class="muted">Categories already used by articles can be hidden from the homepage or deactivated, but not deleted.</p>
+        <p class="muted">Categories already used by articles can be hidden from the homepage or deactivated, but not deleted. Assign a category to one or more homepage sections here; the existing Article form stays unchanged.</p>
         <div class="category-grid" id="categoryCards"></div>
         <form class="editor-card compact-form" id="categoryForm" hidden>
           <h2 id="categoryFormTitle">Add category</h2>
@@ -144,6 +144,11 @@ header('Cache-Control: no-store');
             <label>Sort order<input name="sortOrder" type="number" min="0" value="100"></label>
             <label class="check-label"><input name="homeVisible" type="checkbox" checked> Show on homepage</label>
             <label class="check-label"><input name="isActive" type="checkbox" checked> Active</label>
+            <fieldset class="wide category-home-tabs">
+              <legend>Show articles in homepage sections</legend>
+              <p class="muted">Published articles assigned to this category appear in every selected section.</p>
+              <div class="category-tab-options" id="categoryHomeTabs"></div>
+            </fieldset>
           </div>
           <div class="form-actions"><button class="primary-button" type="submit">Save category</button><button class="quiet-button" id="cancelCategoryButton" type="button">Cancel</button></div>
         </form>

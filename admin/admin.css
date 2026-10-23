@@ -309,6 +309,8 @@ td{color:#4d626c}
 .editor-card{padding:22px}
 .category-card{padding:17px}
 .category-card h3{color:#1b3c4c}
+.category-tab-options{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:4px 12px}
+.category-home-tabs>.muted{margin-bottom:10px}
 .homepage-json-group{border-color:#e2eae7;border-radius:10px;background:#f9fbfa}
 .homepage-json-group>summary{color:#1b3c4c}
 .homepage-json-entry{border-color:#e7eeeb;border-radius:9px}

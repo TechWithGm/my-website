@@ -75,16 +75,36 @@ function cj_public_content(PDO $db): array
     );
     $items = [];
     $byCategory = [];
+    $homeArticles = array_fill_keys(array_keys(cj_home_tab_definitions()), []);
+    $categoryHomeTabs = [];
+    $tabRows = $db->query(
+        'SELECT cht.category_slug, cht.tab_slug
+         FROM category_home_tabs AS cht
+         JOIN categories AS c ON c.slug = cht.category_slug
+         WHERE c.is_active = 1
+         ORDER BY cht.tab_slug, c.sort_order, c.name'
+    )->fetchAll();
+    foreach ($tabRows as $tabRow) {
+        $categoryHomeTabs[$tabRow['category_slug']][] = $tabRow['tab_slug'];
+    }
     foreach ($articleRows as $row) {
         $article = cj_public_article($row);
-        $byCategory[$row['category_slug']][] = [
+        $item = [
+            'articleId' => $article['id'],
             'title' => $article['title'],
             'url' => $article['url'],
-            'displayDate' => cj_format_date($row['updated_at'] ?: $row['published_at']),
+            'displayDate' => cj_format_date($row['published_at']),
             'description' => $article['shortDescription'],
             'keywords' => $article['keywords'],
             'isArticle' => true,
         ];
+        $byCategory[$row['category_slug']][] = $item;
+        foreach ($categoryHomeTabs[$row['category_slug']] ?? [] as $tabSlug) {
+            $homeArticles[$tabSlug][] = $item;
+        }
+    }
+    foreach ($homeArticles as $tabSlug => $tabItems) {
+        $homeArticles[$tabSlug] = array_slice($tabItems, 0, 30);
     }
     foreach ($byCategory as $categorySlug => $categoryItems) {
         $items = array_merge($items, array_map(
@@ -98,7 +118,18 @@ function cj_public_content(PDO $db): array
          WHERE is_published = 1 ORDER BY sort_order, updated_at DESC, id DESC LIMIT 20'
     )->fetchAll();
     $latestItems = [];
+    $latestArticleUrls = [];
+    foreach ($homeArticles['latest-updates'] ?? [] as $articleItem) {
+        $latestArticleUrls[$articleItem['url']] = true;
+        $latestItems[] = $articleItem;
+        if (count($latestItems) >= 30) {
+            break;
+        }
+    }
     foreach ($updates as $update) {
+        if ($update['url'] !== '' && isset($latestArticleUrls[$update['url']])) {
+            continue;
+        }
         $latestItems[] = [
             'title' => $update['title'],
             'url' => $update['url'],
@@ -106,18 +137,8 @@ function cj_public_content(PDO $db): array
             'description' => $update['description'],
             'isArticle' => false,
         ];
-    }
-    if (!$latestItems) {
-        foreach (array_slice($articleRows, 0, 20) as $row) {
-            $article = cj_public_article($row);
-            $latestItems[] = [
-                'title' => $article['title'],
-                'url' => $article['url'],
-                'displayDate' => cj_format_date($row['updated_at'] ?: $row['published_at']),
-                'description' => $article['shortDescription'],
-                'keywords' => $article['keywords'],
-                'isArticle' => true,
-            ];
+        if (count($latestItems) >= 30) {
+            break;
         }
     }
     foreach ($latestItems as $item) {
@@ -130,22 +151,11 @@ function cj_public_content(PDO $db): array
          FROM quick_links WHERE is_active = 1 ORDER BY position_order, id LIMIT 8"
     )->fetchAll();
     $settings['homeLayout']['quickLinks'] = $quickLinks;
-    $homeCategoryIds = [
-        'results', 'admit', 'jobs', 'answer-key', 'syllabus',
-        'admission', 'certificate', 'offline-outsourcing-job', 'important',
-    ];
-    $homeArticles = [];
-    foreach ($homeCategoryIds as $categoryId) {
-        $homeArticles[$categoryId] = array_map(
-            static fn (array $item): array => ['title' => $item['title'], 'url' => $item['url']],
-            $byCategory[$categoryId] ?? []
-        );
-    }
-
     return [
         'categories' => $categories,
         'items' => $items,
         'homeArticles' => $homeArticles,
+        'homeTabs' => cj_home_tab_definitions(),
         'pages' => [],
         'settings' => $settings,
     ];
@@ -422,41 +432,80 @@ function cj_admin_categories(PDO $db, string $method, ?string $slug): never
     if ($method === 'GET' && $slug === null) {
         cj_require_admin();
         $rows = $db->query('SELECT * FROM categories ORDER BY sort_order, name')->fetchAll();
+        $tabStmt = $db->query(
+            'SELECT category_slug, tab_slug FROM category_home_tabs ORDER BY category_slug, tab_slug'
+        );
+        $homeTabs = [];
+        foreach ($tabStmt->fetchAll() as $tabRow) {
+            $homeTabs[$tabRow['category_slug']][] = $tabRow['tab_slug'];
+        }
+        foreach ($rows as &$row) {
+            $row['home_tabs'] = $homeTabs[$row['slug']] ?? [];
+        }
+        unset($row);
         cj_send_json(['data' => $rows]);
     }
     if ($method === 'POST' && $slug === null) {
         cj_require_admin();
-        $input = cj_json_input();
-        $data = cj_normalize_category($input);
-        $stmt = $db->prepare('INSERT INTO categories (slug,name,icon,color,home_visible,nav_visible,is_active,sort_order) VALUES (?,?,?,?,?,?,?,?)');
+        $data = cj_normalize_category(cj_json_input(), true);
+        $homeTabs = $data['home_tabs'];
+        unset($data['home_tabs']);
+        $db->beginTransaction();
         try {
+            $stmt = $db->prepare('INSERT INTO categories (slug,name,icon,color,home_visible,nav_visible,is_active,sort_order) VALUES (?,?,?,?,?,?,?,?)');
             $stmt->execute(array_values($data));
+            cj_replace_category_home_tabs($db, $data['slug'], $homeTabs);
+            $db->commit();
         } catch (PDOException $error) {
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
             if ($error->getCode() === '23505') {
                 cj_send_json(['error' => 'That category slug already exists.'], 409);
             }
             throw $error;
+        } catch (Throwable $error) {
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
+            throw $error;
         }
-        cj_send_json(['data' => $data], 201);
+        cj_send_json(['data' => $data + ['home_tabs' => $homeTabs]], 201);
     }
     if ($method === 'PUT' && $slug !== null) {
         cj_require_admin();
-        $input = cj_json_input();
-        $data = cj_normalize_category($input);
+        $data = cj_normalize_category(cj_json_input());
         if ($data['slug'] !== cj_slug($slug, 'Category')) {
             cj_send_json(['error' => 'Category slugs cannot be changed after creation.'], 422);
         }
-        $stmt = $db->prepare('UPDATE categories SET name=?,icon=?,color=?,home_visible=?,nav_visible=?,is_active=?,sort_order=? WHERE slug=?');
-        $stmt->execute([$data['name'], $data['icon'], $data['color'], $data['home_visible'], $data['nav_visible'], $data['is_active'], $data['sort_order'], $slug]);
-        if (!$stmt->rowCount() && !cj_category_exists($db, $slug)) {
-            cj_send_json(['error' => 'Category not found.'], 404);
+        $db->beginTransaction();
+        try {
+            $stmt = $db->prepare('UPDATE categories SET name=?,icon=?,color=?,home_visible=?,nav_visible=?,is_active=?,sort_order=? WHERE slug=?');
+            $stmt->execute([$data['name'], $data['icon'], $data['color'], $data['home_visible'], $data['nav_visible'], $data['is_active'], $data['sort_order'], $slug]);
+            if (!$stmt->rowCount() && !cj_category_exists($db, $slug)) {
+                $db->rollBack();
+                cj_send_json(['error' => 'Category not found.'], 404);
+            }
+            if (array_key_exists('home_tabs', $data)) {
+                cj_replace_category_home_tabs($db, $slug, $data['home_tabs']);
+            } else {
+                $tabStmt = $db->prepare('SELECT tab_slug FROM category_home_tabs WHERE category_slug=? ORDER BY tab_slug');
+                $tabStmt->execute([$slug]);
+                $data['home_tabs'] = $tabStmt->fetchAll(PDO::FETCH_COLUMN);
+            }
+            $db->commit();
+        } catch (Throwable $error) {
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
+            throw $error;
         }
         cj_send_json(['data' => $data]);
     }
     cj_send_json(['error' => 'Method not allowed.'], 405);
 }
 
-function cj_normalize_category(array $input): array
+function cj_normalize_category(array $input, bool $newCategory = false): array
 {
     $colors = ['blue', 'green', 'orange', 'purple', 'pink', 'teal', 'red'];
     $slug = cj_slug($input['slug'] ?? '', 'Category slug');
@@ -470,7 +519,7 @@ function cj_normalize_category(array $input): array
     if (!in_array($color, $colors, true)) {
         cj_send_json(['error' => 'Choose a supported category color.'], 422);
     }
-    return [
+    $data = [
         'slug' => $slug,
         'name' => cj_text($input['name'] ?? '', 120, 'Category name', true),
         'icon' => cj_text($input['icon'] ?? '', 24, 'Category icon'),
@@ -480,6 +529,37 @@ function cj_normalize_category(array $input): array
         'is_active' => cj_bool($input['isActive'] ?? null, 'Active status', true) ? 1 : 0,
         'sort_order' => cj_integer_range($input['sortOrder'] ?? null, 'Category sort order'),
     ];
+    if (array_key_exists('homeTabs', $input) || $newCategory) {
+        $homeTabs = $input['homeTabs'] ?? ['latest-updates'];
+        if (!is_array($homeTabs)) {
+            cj_send_json(['error' => 'Choose valid homepage sections for this category.'], 422);
+        }
+        $allowedTabs = array_keys(cj_home_tab_definitions());
+        $validatedTabs = [];
+        foreach ($homeTabs as $tab) {
+            if (!is_string($tab) || !in_array($tab, $allowedTabs, true)) {
+                cj_send_json(['error' => 'Choose valid homepage sections for this category.'], 422);
+            }
+            if (!in_array($tab, $validatedTabs, true)) {
+                $validatedTabs[] = $tab;
+            }
+        }
+        $data['home_tabs'] = $validatedTabs;
+    }
+    return $data;
+}
+
+function cj_replace_category_home_tabs(PDO $db, string $categorySlug, array $homeTabs): void
+{
+    $delete = $db->prepare('DELETE FROM category_home_tabs WHERE category_slug=?');
+    $delete->execute([$categorySlug]);
+    if (!$homeTabs) {
+        return;
+    }
+    $insert = $db->prepare('INSERT INTO category_home_tabs (category_slug, tab_slug) VALUES (?,?)');
+    foreach ($homeTabs as $tabSlug) {
+        $insert->execute([$categorySlug, $tabSlug]);
+    }
 }
 
 function cj_category_exists(PDO $db, string $slug): bool
