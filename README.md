@@ -6,7 +6,7 @@ This project retains the Cyber Junction homepage layout and adds PHP/PostgreSQL 
 
 - Reusable, server-rendered article pages at `/{slug}/`, category pages at `/category/{slug}/`, and a generated `/sitemap.xml`.
 - Secure admin dashboard at `/admin/` with one-time first-admin setup, login/logout, article search and filters, draft/publish/unpublish, edit, delete confirmation, preview, featured articles, categories, and Latest Updates.
-- A **Homepage** dashboard editor for the homepage text, branding, promotions, sidebar links, social links, service links, Bihar Bhoomi directory, quick links and curated Result / Admit Card / Latest Job lists.
+- A **Quick Links** dashboard for the homepage button grid, with create, edit, delete, visibility, color and ordering controls, plus a **Homepage** editor for site text, branding, promotions, sidebar links, social links, service links, Bihar Bhoomi directory and curated Result / Admit Card / Latest Job lists.
 - PostgreSQL schema and an explicitly labelled **draft-only** demonstration article. It contains no invented recruitment dates or eligibility data and is not visible publicly.
 - Published article content automatically populates the existing homepage category cards and Latest Updates. The existing homepage layout, navigation and contact form remain in place.
 - Old article slugs redirect after a slug edit. Drafts, unpublished articles, future-dated articles and articles in inactive categories are excluded from public routes, search, homepage lists and the sitemap.
@@ -43,9 +43,9 @@ The PHP built-in server is not a production server. Keep it bound to localhost a
 
 ## Homepage content
 
-Open **Homepage** in the admin dashboard to edit the homepage sections, labels, text and links. The Important Updates grid and Result / Admit Card / Latest Job cards start blank. Add, edit, remove and reorder their links directly in the Homepage panel, and change each heading there; links accept internal paths or HTTPS URLs. Published articles are not shown in those cards unless you enable the per-card automatic articles option. Other categories remain manageable through **Articles**; categories and Latest Updates use their existing dashboard sections. Homepage settings are saved in the PostgreSQL `homepage_settings` JSONB record, so this layout does not require a new table or database migration.
+Open **Quick Links** in the admin dashboard to add, edit, delete, activate, hide, recolor and reorder up to 8 active buttons at the top of the homepage. The button design uses rectangular tiles with bold white text and olive, blue, orange, dark red, bright red, green, pink and royal blue colors, matching the supplied reference. The grid shows four columns on desktop and two on mobile. Open **Homepage** to edit the nine Result, Admit Card, Latest Job, Answer Key, Syllabus, Admission, Certificate, Offline/Outsourcing Job and Important cards. Add, edit, remove and reorder each card's links and change its heading there. Cards grow naturally with their content; published articles can be shown automatically per card when its matching category exists, or use curated links. Links accept internal paths or HTTPS URLs. Quick links are stored in the PostgreSQL `quick_links` table; section lists and other homepage settings use the `homepage_settings` JSONB record.
 
-For an existing database, re-run `backend/schema.sql` in the Supabase SQL Editor before deploying or using the Homepage editor. The schema creates the new `homepage_settings` table idempotently and does not overwrite saved homepage content.
+For an existing database, re-run `backend/schema.sql` in the Supabase SQL Editor before deploying or using the Quick Links editor. The idempotent schema creates the `quick_links` table and imports any existing homepage quick links once, without overwriting saved homepage content.
 
 ## Admin article fields
 

@@ -124,11 +124,30 @@ function cj_public_content(PDO $db): array
         $items[] = ['categoryId' => 'latest-updates'] + $item;
     }
 
+    $settings = cj_homepage_settings($db);
+    $quickLinks = $db->query(
+        "SELECT title, url, bg_color AS \"bgColor\", text_color AS \"textColor\"
+         FROM quick_links WHERE is_active = 1 ORDER BY position_order, id LIMIT 8"
+    )->fetchAll();
+    $settings['homeLayout']['quickLinks'] = $quickLinks;
+    $homeCategoryIds = [
+        'results', 'admit', 'jobs', 'answer-key', 'syllabus',
+        'admission', 'certificate', 'offline-outsourcing-job', 'important',
+    ];
+    $homeArticles = [];
+    foreach ($homeCategoryIds as $categoryId) {
+        $homeArticles[$categoryId] = array_map(
+            static fn (array $item): array => ['title' => $item['title'], 'url' => $item['url']],
+            $byCategory[$categoryId] ?? []
+        );
+    }
+
     return [
         'categories' => $categories,
         'items' => $items,
+        'homeArticles' => $homeArticles,
         'pages' => [],
-        'settings' => cj_homepage_settings($db),
+        'settings' => $settings,
     ];
 }
 
@@ -506,6 +525,188 @@ function cj_admin_latest_updates(PDO $db, string $method, ?int $id): never
     cj_send_json(['error' => 'Method not allowed.'], 405);
 }
 
+function cj_admin_quick_links(PDO $db, string $method, ?string $identifier): never
+{
+    if ($method === 'GET' && $identifier === null) {
+        cj_require_admin();
+        $rows = $db->query('SELECT * FROM quick_links ORDER BY position_order, id')->fetchAll();
+        cj_send_json(['data' => $rows]);
+    }
+    if ($method === 'POST' && $identifier === null) {
+        cj_require_admin();
+        $data = cj_normalize_quick_link(cj_json_input());
+        $db->beginTransaction();
+        try {
+            if ($data['is_active']) {
+                cj_lock_quick_link_capacity($db);
+                cj_check_quick_link_capacity($db);
+            }
+            $stmt = $db->prepare(
+                'INSERT INTO quick_links (title,url,bg_color,text_color,position_order,is_active)
+                 VALUES (?,?,?,?,?,?) RETURNING id'
+            );
+            $stmt->execute(array_values($data));
+            $id = (int) $stmt->fetchColumn();
+            $db->commit();
+        } catch (Throwable $error) {
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
+            throw $error;
+        }
+        cj_send_json(['data' => ['id' => $id] + $data], 201);
+    }
+    if ($method === 'PUT' && $identifier === 'order') {
+        cj_require_admin();
+        $input = cj_json_input();
+        $ids = $input['ids'] ?? null;
+        if (!is_array($ids) || count($ids) > 500) {
+            cj_send_json(['error' => 'Quick link order must be a list of link IDs.'], 422);
+        }
+        $ids = array_map(
+            static fn (mixed $id): int|false => filter_var($id, FILTER_VALIDATE_INT),
+            $ids
+        );
+        if (in_array(false, $ids, true) || count(array_unique($ids)) !== count($ids)) {
+            cj_send_json(['error' => 'Quick link order contains invalid or duplicate IDs.'], 422);
+        }
+        $currentIds = array_map(
+            'intval',
+            $db->query('SELECT id FROM quick_links ORDER BY position_order, id')->fetchAll(PDO::FETCH_COLUMN)
+        );
+        $sortedIds = $ids;
+        $sortedCurrentIds = $currentIds;
+        sort($sortedIds);
+        sort($sortedCurrentIds);
+        if ($sortedIds !== $sortedCurrentIds) {
+            cj_send_json(['error' => 'Quick link order must include every existing link exactly once.'], 409);
+        }
+        $db->beginTransaction();
+        try {
+            $stmt = $db->prepare('UPDATE quick_links SET position_order = ? WHERE id = ?');
+            foreach ($ids as $position => $id) {
+                $stmt->execute([$position, $id]);
+            }
+            $db->commit();
+        } catch (Throwable $error) {
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
+            throw $error;
+        }
+        cj_send_json(['success' => true]);
+    }
+    if ($method === 'PUT' && $identifier !== null) {
+        cj_require_admin();
+        $id = filter_var($identifier, FILTER_VALIDATE_INT);
+        if (!$id) {
+            cj_send_json(['error' => 'Invalid quick link ID.'], 400);
+        }
+        $data = cj_normalize_quick_link(cj_json_input());
+        $db->beginTransaction();
+        try {
+            if ($data['is_active']) {
+                cj_lock_quick_link_capacity($db);
+                cj_check_quick_link_capacity($db, (int) $id);
+            }
+            $stmt = $db->prepare(
+                'UPDATE quick_links SET title=?,url=?,bg_color=?,text_color=?,position_order=?,is_active=? WHERE id=?'
+            );
+            $stmt->execute([...array_values($data), $id]);
+            if (!$stmt->rowCount() && !cj_quick_link_exists($db, (int) $id)) {
+                $db->rollBack();
+                cj_send_json(['error' => 'Quick link not found.'], 404);
+            }
+            $db->commit();
+        } catch (Throwable $error) {
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
+            throw $error;
+        }
+        cj_send_json(['data' => ['id' => (int) $id] + $data]);
+    }
+    if ($method === 'DELETE' && $identifier !== null) {
+        cj_require_admin();
+        $id = filter_var($identifier, FILTER_VALIDATE_INT);
+        if (!$id) {
+            cj_send_json(['error' => 'Invalid quick link ID.'], 400);
+        }
+        $stmt = $db->prepare('DELETE FROM quick_links WHERE id = ?');
+        $stmt->execute([(int) $id]);
+        if (!$stmt->rowCount()) {
+            cj_send_json(['error' => 'Quick link not found.'], 404);
+        }
+        cj_send_json(['success' => true]);
+    }
+    cj_send_json(['error' => 'Method not allowed.'], 405);
+}
+
+function cj_normalize_quick_link(array $input): array
+{
+    if (isset($input['url']) && !is_string($input['url'])) {
+        cj_send_json(['error' => 'Link URL is invalid.'], 422);
+    }
+    $url = trim((string) ($input['url'] ?? ''));
+    if (str_starts_with($url, '/')) {
+        if (!preg_match('~^/(?!/)[a-zA-Z0-9/_-]*(?:\?[^#\s]*)?(?:#[a-zA-Z0-9_-]*)?$~', $url)) {
+            cj_send_json(['error' => 'Enter a valid internal path or HTTPS URL.'], 422);
+        }
+    } elseif (preg_match('/^mailto:/i', $url)) {
+        if (!preg_match('/^mailto:[^\s]+$/i', $url) || !filter_var(substr($url, 7), FILTER_VALIDATE_EMAIL)) {
+            cj_send_json(['error' => 'Enter a valid internal path or HTTPS URL.'], 422);
+        }
+    } elseif (!preg_match('/^#[a-z0-9_-]+$/i', $url)) {
+        if (!preg_match('~^https://~i', $url)) {
+            cj_send_json(['error' => 'Enter a valid internal path or HTTPS URL.'], 422);
+        }
+        $url = cj_safe_url($url, 'Link URL');
+    }
+    $bgColor = $input['bgColor'] ?? 'blue';
+    $textColor = $input['textColor'] ?? 'white';
+    if (!in_array($bgColor, ['olive', 'blue', 'orange', 'darkred', 'red', 'green', 'pink', 'royalblue', 'purple', 'teal', 'slate'], true)) {
+        cj_send_json(['error' => 'Choose a supported background color.'], 422);
+    }
+    if (!in_array($textColor, ['white', 'dark'], true)) {
+        cj_send_json(['error' => 'Choose a supported text color.'], 422);
+    }
+    return [
+        'title' => cj_text($input['title'] ?? '', 300, 'Link title', true),
+        'url' => $url,
+        'bg_color' => $bgColor,
+        'text_color' => $textColor,
+        'position_order' => cj_integer_range($input['positionOrder'] ?? null, 'Position order'),
+        'is_active' => cj_bool($input['isActive'] ?? null, 'Active status', true) ? 1 : 0,
+    ];
+}
+
+function cj_quick_link_exists(PDO $db, int $id): bool
+{
+    $stmt = $db->prepare('SELECT 1 FROM quick_links WHERE id = ?');
+    $stmt->execute([$id]);
+    return $stmt->fetchColumn() !== false;
+}
+
+function cj_lock_quick_link_capacity(PDO $db): void
+{
+    $db->query("SELECT pg_advisory_xact_lock(hashtext('cj_quick_links_active_limit'))");
+}
+
+function cj_check_quick_link_capacity(PDO $db, ?int $excludeId = null): void
+{
+    $sql = 'SELECT COUNT(*) FROM quick_links WHERE is_active = 1';
+    $params = [];
+    if ($excludeId !== null) {
+        $sql .= ' AND id <> ?';
+        $params[] = $excludeId;
+    }
+    $stmt = $db->prepare($sql);
+    $stmt->execute($params);
+    if ((int) $stmt->fetchColumn() >= 8) {
+        cj_send_json(['error' => 'Only 8 quick links can be active. Hide another link before activating this one.'], 422);
+    }
+}
+
 function cj_normalize_latest_update(array $input): array
 {
     if (isset($input['url']) && !is_string($input['url'])) {
@@ -657,6 +858,9 @@ function cj_admin_dispatch(PDO $db, array $segments): never
     }
     if ($resource === 'homepage' && $identifier === null) {
         cj_admin_homepage($db, $method);
+    }
+    if ($resource === 'quick-links') {
+        cj_admin_quick_links($db, $method, $identifier);
     }
     if ($resource === 'latest-updates') {
         $id = $identifier === null ? null : filter_var($identifier, FILTER_VALIDATE_INT);

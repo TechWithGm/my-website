@@ -314,14 +314,23 @@ function appendHomeLink(container, item, className) {
   return true;
 }
 
-function renderHomeLayout(settings, items = []) {
+function renderHomeLayout(settings, items = [], homeArticles = {}) {
   const layout = settings?.homeLayout || {};
   const titles = layout.titles || {};
+  const homeSections = [
+    ["results", "results", "Result"],
+    ["admit", "admit", "Admit Card"],
+    ["jobs", "jobs", "Latest Job"],
+    ["answerKey", "answer-key", "Answer Key"],
+    ["syllabus", "syllabus", "Syllabus"],
+    ["admission", "admission", "Admission"],
+    ["certificate", "certificate", "Certificate"],
+    ["offlineOutsourcingJob", "offline-outsourcing-job", "Offline/Outsourcing Job"],
+    ["important", "important", "Important"],
+  ];
   [
     ["quickLinks", "homeQuickLinksTitle"],
-    ["results", "homeResultsTitle"],
-    ["admit", "homeAdmitTitle"],
-    ["jobs", "homeJobsTitle"],
+    ...homeSections.map(([key]) => [key, `home${key[0].toUpperCase()}${key.slice(1)}Title`]),
   ].forEach(([key, elementId]) => {
     const heading = document.getElementById(elementId);
     if (heading && typeof titles[key] === "string") heading.textContent = titles[key];
@@ -330,26 +339,25 @@ function renderHomeLayout(settings, items = []) {
   const quickLinks = layout.quickLinks;
   if (quickLinksRoot && Array.isArray(quickLinks)) {
     quickLinksRoot.replaceChildren();
+    const colors = ["olive", "blue", "orange", "darkred", "red", "green", "pink", "royalblue", "purple", "teal", "slate"];
     quickLinks.forEach((item, index) => {
-      appendHomeLink(quickLinksRoot, item, `home-quick-link tone-${index % 8}`);
+      const color = colors.includes(item?.bgColor) ? item.bgColor : colors[index % colors.length];
+      const textColor = item?.textColor === "dark" ? "dark" : "white";
+      appendHomeLink(quickLinksRoot, item, `home-quick-link tone-${color} text-${textColor}`);
     });
   }
 
   const columns = layout.columns || {};
   const useCustomLists = layout.useCustomLists || {};
-  [
-    ["results", "results"],
-    ["admit", "admit"],
-    ["jobs", "jobs"],
-  ].forEach(([key, categoryId]) => {
+  homeSections.forEach(([key, categoryId]) => {
     const list = document.getElementById(`home${key[0].toUpperCase()}${key.slice(1)}List`);
     if (!list) return;
     list.replaceChildren();
     const customItems = Array.isArray(columns[key]) ? columns[key] : [];
-    const categoryItems = items.filter((item) => item.categoryId === categoryId);
+    const categoryItems = homeArticles[categoryId] || items.filter((item) => item.categoryId === categoryId);
     const sourceItems = useCustomLists[key] === true
       ? customItems
-      : categoryItems.slice(0, 12);
+      : categoryItems;
     sourceItems.forEach((item) => {
       const entry = document.createElement("li");
       if (!appendHomeLink(entry, item, "home-update-link")) return;
@@ -928,7 +936,7 @@ async function loadManagedSiteContent() {
       if (staleCard) staleCard.hidden = true;
     });
     applyHomepageContent(settings);
-    renderHomeLayout(settings, items);
+    renderHomeLayout(settings, items, content.homeArticles || {});
 
     renderManagedNavigation(categories, pages || []);
     applyManagedPages(pages || []);

@@ -15,8 +15,10 @@
   let categories = [];
   let articles = [];
   let updates = [];
+  let quickLinks = [];
   let homepageContent = {};
   let currentUpdateId = null;
+  let currentQuickLinkId = null;
   let currentCategorySlug = null;
   let refreshTimer;
 
@@ -98,7 +100,7 @@
   }
 
   async function loadDashboard() {
-    await Promise.all([loadCategories(), loadArticles(), loadUpdates(), loadHomepage()]);
+    await Promise.all([loadCategories(), loadArticles(), loadUpdates(), loadQuickLinks(), loadHomepage()]);
   }
 
   async function loadCategories() {
@@ -128,6 +130,12 @@
     renderUpdates();
   }
 
+  async function loadQuickLinks() {
+    const result = await request("quick-links");
+    quickLinks = result.data;
+    renderQuickLinks();
+  }
+
   async function loadHomepage() {
     const result = await request("homepage");
     homepageContent = result.data;
@@ -141,13 +149,17 @@
     }
     const layout = homepageContent.homeLayout;
     if (!layout.titles || typeof layout.titles !== "object") layout.titles = {};
-    ["quickLinks", "results", "admit", "jobs"].forEach((key) => {
+    const sectionKeys = [
+      "results", "admit", "jobs", "answerKey", "syllabus",
+      "admission", "certificate", "offlineOutsourcingJob", "important"
+    ];
+    ["quickLinks", ...sectionKeys].forEach((key) => {
       if (typeof layout.titles[key] !== "string") layout.titles[key] = "";
     });
     if (!Array.isArray(layout.quickLinks)) layout.quickLinks = [];
     if (!layout.useCustomLists || typeof layout.useCustomLists !== "object") layout.useCustomLists = {};
     if (!layout.columns || typeof layout.columns !== "object") layout.columns = {};
-    ["results", "admit", "jobs"].forEach((key) => {
+    sectionKeys.forEach((key) => {
       layout.useCustomLists[key] = layout.useCustomLists[key] !== false;
       if (!Array.isArray(layout.columns[key])) layout.columns[key] = [];
     });
@@ -187,8 +199,8 @@
     headingCopy.append(sectionTitle, titleInput, sectionDescription);
     heading.appendChild(headingCopy);
 
-    const list = categoryId ? layout.columns[categoryId] : layout.quickLinks;
-    const automatic = categoryId && layout.useCustomLists[categoryId] === false;
+    const list = categoryId ? layout.columns[key] : layout.quickLinks;
+    const automatic = categoryId && layout.useCustomLists[key] === false;
     if (categoryId) {
       const automaticLabel = document.createElement("label");
       automaticLabel.className = "homepage-auto-toggle";
@@ -196,7 +208,7 @@
       checkbox.type = "checkbox";
       checkbox.checked = automatic;
       checkbox.addEventListener("change", () => {
-        layout.useCustomLists[categoryId] = !checkbox.checked;
+        layout.useCustomLists[key] = !checkbox.checked;
         renderHomepageLayoutEditor();
       });
       const labelText = document.createElement("span");
@@ -249,7 +261,7 @@
     });
 
     const add = makeAction(`＋ Add ${categoryId ? "link" : "quick link"}`, () => {
-      if (categoryId) layout.useCustomLists[categoryId] = true;
+      if (categoryId) layout.useCustomLists[key] = true;
       list.push({ title: "", url: "" });
       renderHomepageLayoutEditor();
     }, "secondary-button");
@@ -262,20 +274,21 @@
     const editor = document.getElementById("homeLayoutEditor");
     if (!editor) return;
     editor.replaceChildren();
-    renderHomepageLinkList(editor, {
-      key: "quickLinks",
-      title: "Top Quick Links — Important Updates",
-      description: "Manage the colorful buttons shown above the homepage content. Add, edit, remove, or reorder links here; their display order follows this list."
-    });
     [
-      ["results", "Result"],
-      ["admit", "Admit Card"],
-      ["jobs", "Latest Job"],
-    ].forEach(([key, title]) => {
+      ["results", "Result", "results"],
+      ["admit", "Admit Card", "admit"],
+      ["jobs", "Latest Job", "jobs"],
+      ["answerKey", "Answer Key", "answer-key"],
+      ["syllabus", "Syllabus", "syllabus"],
+      ["admission", "Admission", "admission"],
+      ["certificate", "Certificate", "certificate"],
+      ["offlineOutsourcingJob", "Offline/Outsourcing Job", "offline-outsourcing-job"],
+      ["important", "Important", "important"],
+    ].forEach(([key, title, categoryId]) => {
       renderHomepageLinkList(editor, {
         key,
         title,
-        categoryId: key,
+        categoryId,
         description: `Links shown in the ${title} homepage card.`
       });
     });
@@ -565,6 +578,54 @@
     });
   }
 
+  function renderQuickLinks() {
+    const rows = document.getElementById("quickLinkRows");
+    const empty = document.getElementById("quickLinkEmpty");
+    rows.replaceChildren();
+    empty.hidden = quickLinks.length > 0;
+    const activeCount = quickLinks.filter((link) => Number(link.is_active) === 1).length;
+    quickLinks.forEach((link, index) => {
+      const row = document.createElement("tr");
+      const previewCell = document.createElement("td");
+      const preview = document.createElement("span");
+      preview.className = `quick-link-preview tone-${link.bg_color} text-${link.text_color}`;
+      preview.textContent = link.title;
+      previewCell.appendChild(preview);
+      const url = document.createElement("td");
+      url.textContent = link.url;
+      const visibility = document.createElement("td");
+      const pill = document.createElement("span");
+      const active = Number(link.is_active) === 1;
+      pill.className = `status-pill ${active ? "published" : "unpublished"}`;
+      pill.textContent = active ? "Active" : "Hidden";
+      visibility.appendChild(pill);
+      const order = document.createElement("td");
+      order.textContent = String(index + 1);
+      const actionCell = document.createElement("td");
+      const actions = document.createElement("div");
+      actions.className = "row-actions";
+      const moveUp = makeAction("↑", () => moveQuickLink(index, -1));
+      moveUp.setAttribute("aria-label", `Move ${link.title} up`);
+      moveUp.disabled = index === 0;
+      const moveDown = makeAction("↓", () => moveQuickLink(index, 1));
+      moveDown.setAttribute("aria-label", `Move ${link.title} down`);
+      moveDown.disabled = index === quickLinks.length - 1;
+      const toggle = makeAction(active ? "Hide" : "Activate", () => toggleQuickLink(link));
+      toggle.disabled = !active && activeCount >= 8;
+      if (toggle.disabled) toggle.title = "Only 8 quick links can be active on the homepage.";
+      actions.append(
+        moveUp,
+        moveDown,
+        makeAction("Edit", () => editQuickLink(link)),
+        toggle,
+        makeAction("Delete", () => deleteQuickLink(link), "delete-action")
+      );
+      actionCell.appendChild(actions);
+      row.append(previewCell, url, visibility, order, actionCell);
+      rows.appendChild(row);
+    });
+  }
+
   function renderCategories() {
     const container = document.getElementById("categoryCards");
     container.replaceChildren();
@@ -842,6 +903,101 @@
     }
   }
 
+  function editQuickLink(link) {
+    const form = document.getElementById("quickLinkForm");
+    form.hidden = false;
+    currentQuickLinkId = Number(link.id);
+    form.elements.id.value = link.id;
+    form.elements.title.value = link.title;
+    form.elements.url.value = link.url;
+    form.elements.bgColor.value = link.bg_color;
+    form.elements.textColor.value = link.text_color;
+    form.elements.positionOrder.value = Number(link.position_order);
+    form.elements.isActive.checked = Number(link.is_active) === 1;
+    document.getElementById("quickLinkFormTitle").textContent = "Edit quick link";
+    form.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+
+  function resetQuickLinkForm() {
+    const form = document.getElementById("quickLinkForm");
+    form.reset();
+    form.elements.id.value = "";
+    form.elements.bgColor.value = "blue";
+    form.elements.textColor.value = "white";
+    form.elements.positionOrder.value = quickLinks.length
+      ? Math.max(...quickLinks.map((link) => Number(link.position_order))) + 1
+      : 0;
+    form.elements.isActive.checked = quickLinks.filter((link) => Number(link.is_active) === 1).length < 8;
+    currentQuickLinkId = null;
+    form.hidden = true;
+  }
+
+  async function saveQuickLink(event) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const data = formObject(form);
+    data.positionOrder = Number(data.positionOrder || 0);
+    data.isActive = form.elements.isActive.checked;
+    try {
+      await request(currentQuickLinkId ? `quick-links/${currentQuickLinkId}` : "quick-links", {
+        method: currentQuickLinkId ? "PUT" : "POST",
+        body: JSON.stringify(data)
+      });
+      resetQuickLinkForm();
+      await loadQuickLinks();
+      showMessage(dashboardMessage, "Quick link saved.", false);
+    } catch (error) {
+      showMessage(dashboardMessage, error.message);
+    }
+  }
+
+  async function toggleQuickLink(link) {
+    const data = {
+      title: link.title,
+      url: link.url,
+      bgColor: link.bg_color,
+      textColor: link.text_color,
+      positionOrder: Number(link.position_order),
+      isActive: Number(link.is_active) !== 1
+    };
+    try {
+      await request(`quick-links/${link.id}`, { method: "PUT", body: JSON.stringify(data) });
+      await loadQuickLinks();
+      showMessage(dashboardMessage, `Quick link ${data.isActive ? "activated" : "hidden"}.`, false);
+    } catch (error) {
+      showMessage(dashboardMessage, error.message);
+    }
+  }
+
+  async function deleteQuickLink(link) {
+    if (!window.confirm(`Delete "${link.title}" from the homepage quick links?`)) return;
+    try {
+      await request(`quick-links/${link.id}`, { method: "DELETE" });
+      showMessage(dashboardMessage, "Quick link deleted.", false);
+      await loadQuickLinks();
+    } catch (error) {
+      showMessage(dashboardMessage, error.message);
+    }
+  }
+
+  async function moveQuickLink(index, direction) {
+    const nextIndex = index + direction;
+    if (nextIndex < 0 || nextIndex >= quickLinks.length) return;
+    [quickLinks[index], quickLinks[nextIndex]] = [quickLinks[nextIndex], quickLinks[index]];
+    renderQuickLinks();
+    try {
+      await request("quick-links/order", {
+        method: "PUT",
+        body: JSON.stringify({ ids: quickLinks.map((link) => Number(link.id)) })
+      });
+      await loadQuickLinks();
+      showMessage(dashboardMessage, "Quick link order saved.", false);
+    } catch (error) {
+      await loadQuickLinks();
+      showMessage(dashboardMessage, error.message);
+    }
+  }
+
   function editCategory(category) {
     const form = document.getElementById("categoryForm");
     currentCategorySlug = category.slug;
@@ -949,6 +1105,13 @@
   });
   document.getElementById("cancelUpdateButton").addEventListener("click", resetUpdateForm);
   document.getElementById("updateForm").addEventListener("submit", saveUpdate);
+  document.getElementById("newQuickLinkButton").addEventListener("click", () => {
+    resetQuickLinkForm();
+    document.getElementById("quickLinkForm").hidden = false;
+    document.getElementById("quickLinkFormTitle").textContent = "Add quick link";
+  });
+  document.getElementById("cancelQuickLinkButton").addEventListener("click", resetQuickLinkForm);
+  document.getElementById("quickLinkForm").addEventListener("submit", saveQuickLink);
   document.getElementById("newCategoryButton").addEventListener("click", () => {
     resetCategoryForm();
     document.getElementById("categoryForm").hidden = false;

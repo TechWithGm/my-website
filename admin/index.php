@@ -50,6 +50,7 @@ header('Cache-Control: no-store');
       </header>
       <nav class="dashboard-nav" aria-label="Admin sections">
         <button class="tab-button active" type="button" data-panel="articlesPanel">Articles</button>
+        <button class="tab-button" type="button" data-panel="quickLinksPanel">Quick Links</button>
         <button class="tab-button" type="button" data-panel="updatesPanel">Latest Updates</button>
         <button class="tab-button" type="button" data-panel="categoriesPanel">Categories</button>
         <button class="tab-button" type="button" data-panel="homepagePanel">Homepage</button>
@@ -70,6 +71,31 @@ header('Cache-Control: no-store');
           <table><thead><tr><th>Title</th><th>Category</th><th>Status</th><th>Updated</th><th>Actions</th></tr></thead><tbody id="articleRows"></tbody></table>
         </div>
         <p class="empty-state" id="articleEmpty" hidden>No articles match these filters.</p>
+      </section>
+
+      <section class="manager-panel" id="quickLinksPanel" hidden>
+        <div class="panel-heading">
+          <div><p class="eyebrow">HOMEPAGE BUTTON GRID</p><h1>Quick Links</h1></div>
+          <button class="primary-button" id="newQuickLinkButton" type="button">＋ New quick link</button>
+        </div>
+        <p class="muted">Manage up to 8 active colorful buttons at the top of the homepage. Set each label, URL, background and text color, visibility, and order.</p>
+        <div class="table-scroll">
+          <table><thead><tr><th>Button</th><th>URL</th><th>Visibility</th><th>Order</th><th>Actions</th></tr></thead><tbody id="quickLinkRows"></tbody></table>
+        </div>
+        <p class="empty-state" id="quickLinkEmpty" hidden>No quick links yet. Add a link to show a button on the homepage.</p>
+        <form class="editor-card compact-form" id="quickLinkForm" hidden>
+          <h2 id="quickLinkFormTitle">Add quick link</h2>
+          <input name="id" type="hidden">
+          <div class="form-grid">
+            <label class="wide">Button text<input name="title" required maxlength="300"></label>
+            <label class="wide">Link URL (internal path or HTTPS URL)<input name="url" type="text" required maxlength="2048" placeholder="/jobs/ or https://example.com"></label>
+            <label>Background color<select name="bgColor"><option value="olive">Olive</option><option value="blue" selected>Blue</option><option value="orange">Orange</option><option value="darkred">Dark red</option><option value="red">Bright red</option><option value="green">Green</option><option value="pink">Pink</option><option value="royalblue">Royal blue</option><option value="purple">Purple</option><option value="teal">Teal</option><option value="slate">Slate</option></select></label>
+            <label>Text color<select name="textColor"><option value="white" selected>White</option><option value="dark">Dark</option></select></label>
+            <label>Display order<input name="positionOrder" type="number" min="0" value="0"></label>
+            <label class="check-label"><input name="isActive" type="checkbox" checked> Active on homepage</label>
+          </div>
+          <div class="form-actions"><button class="primary-button" type="submit">Save quick link</button><button class="quiet-button" id="cancelQuickLinkButton" type="button">Cancel</button></div>
+        </form>
       </section>
 
       <section class="manager-panel" id="updatesPanel" hidden>
@@ -124,7 +150,7 @@ header('Cache-Control: no-store');
         <div class="panel-heading">
           <div><p class="eyebrow">SITE CONTENT</p><h1>Homepage</h1></div>
         </div>
-        <p class="muted">Manage the top colorful quick-link buttons and the Result, Admit Card, and Latest Job lists here. Add, edit, remove, or reorder links, then select Save homepage. These link lists start empty.</p>
+        <p class="muted">Manage the Result, Admit Card, and Latest Job lists here. Add, edit, remove, or reorder links, then select Save homepage. These link lists start empty.</p>
         <div id="homeLayoutEditor" class="homepage-link-editor"></div>
         <div class="homepage-editor" id="homepageEditor"></div>
         <div class="form-actions"><button class="primary-button" id="saveHomepageButton" type="button">Save homepage</button></div>
