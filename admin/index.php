@@ -51,7 +51,7 @@ header('Cache-Control: no-store');
       <nav class="dashboard-nav" aria-label="Admin sections">
         <button class="tab-button active" type="button" data-panel="articlesPanel">Articles</button>
         <button class="tab-button" type="button" data-panel="quickLinksPanel">Quick Links</button>
-        <button class="tab-button" type="button" data-panel="updatesPanel">Latest Updates</button>
+        <button class="tab-button" type="button" data-panel="updatesPanel">Trending Jobs</button>
         <button class="tab-button" type="button" data-panel="categoriesPanel">Categories</button>
         <button class="tab-button" type="button" data-panel="homepagePanel">Homepage</button>
       </nav>
@@ -104,7 +104,7 @@ header('Cache-Control: no-store');
 
       <section class="manager-panel" id="updatesPanel" hidden>
         <div class="panel-heading">
-          <div><p class="eyebrow">HOMEPAGE SIDEBAR</p><h1>Latest Updates</h1></div>
+          <div><p class="eyebrow">HOMEPAGE SIDEBAR</p><h1>Trending Jobs</h1></div>
           <button class="primary-button" id="newUpdateButton" type="button">＋ New update</button>
         </div>
         <p class="muted">If no manual updates are published, the latest published articles appear here automatically.</p>
@@ -113,7 +113,7 @@ header('Cache-Control: no-store');
         </div>
         <form class="editor-card compact-form" id="updateForm" hidden>
           <input name="id" type="hidden">
-          <h2 id="updateFormTitle">Add latest update</h2>
+          <h2 id="updateFormTitle">Add trending job</h2>
           <div class="form-grid">
             <label class="wide">Title<input name="title" required maxlength="300"></label>
             <label class="wide">Link URL (internal path or HTTPS URL)<input name="url" type="text" maxlength="2048" placeholder="/article-slug/"></label>

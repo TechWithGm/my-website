@@ -1,20 +1,20 @@
 # Cyber Junction Dynamic Articles
 
-This project retains the Cyber Junction homepage layout and adds PHP/PostgreSQL content management for its homepage, articles, categories and Latest Updates. PHP 8.1+ with PDO PostgreSQL, `mbstring` and `openssl`, plus PostgreSQL 14+ are required; the source-only workspace does not include a PHP runtime or a database server.
+This project retains the Cyber Junction homepage layout and adds PHP/PostgreSQL content management for its homepage, articles, categories and Trending Jobs. PHP 8.1+ with PDO PostgreSQL, `mbstring` and `openssl`, plus PostgreSQL 14+ are required; the source-only workspace does not include a PHP runtime or a database server.
 
 ## Included
 
 - Reusable, server-rendered article pages at `/{slug}/`, category pages at `/category/{slug}/`, and a generated `/sitemap.xml`.
-- Secure admin dashboard at `/admin/` with one-time first-admin setup, login/logout, article search and filters, draft/publish/unpublish, edit, delete confirmation, preview, featured articles, categories, and Latest Updates.
+- Secure admin dashboard at `/admin/` with one-time first-admin setup, login/logout, article search and filters, draft/publish/unpublish, edit, delete confirmation, preview, featured articles, categories, and Trending Jobs.
 - A **Quick Links** dashboard for the homepage button grid, with create, edit, delete, visibility, color and ordering controls, plus a **Homepage** editor for site text, branding, promotions, sidebar links, social links, service links, Bihar Bhoomi directory and article-backed Result / Admit Card / Latest Job lists.
 - PostgreSQL schema and an explicitly labelled **draft-only** demonstration article. It contains no invented recruitment dates or eligibility data and is not visible publicly.
-- Published article content populates mapped homepage sections and Latest Updates, including its title, publish date, short description and Read More link. Category-to-section mappings are managed from **Categories**, so one article category can feed multiple homepage sections without changing the Article form or article records. The category-card grid is hidden without deleting its articles or links; homepage cards are managed from Articles by selecting the existing article category. Bihar Bhoomi and RTPS services are grouped under the expandable Bihar Bhoomi panel near the top of the homepage. The homepage and managed article/category pages provide navigation to visible homepage sections, with Quick Links and Important Pages restored in the footer.
+- Published article content populates mapped homepage sections and Trending Jobs, including its title, publish date, short description and Read More link. Trending Jobs is an Article category; category-to-section mappings are managed from **Categories**, so one article category can feed multiple homepage sections without changing the Article form or article records. The category-card grid is hidden without deleting its articles or links; homepage cards are managed from Articles by selecting the existing article category. Bihar Bhoomi and RTPS services are grouped under the expandable Bihar Bhoomi panel near the top of the homepage. The homepage and managed article/category pages provide navigation to visible homepage sections, with Quick Links and Important Pages restored in the footer.
 - The Popular Searches, Government Jobs All India, Latest News and Important Links sidebar cards are removed from the homepage.
 - Old article slugs redirect after a slug edit. Drafts, unpublished articles, future-dated articles and articles in inactive categories are excluded from public routes, search, homepage lists and the sitemap.
 
 ## Local setup on Windows
 
-1. Install PHP 8.1 or later with the `pdo_pgsql`, `mbstring` and `openssl` extensions, plus PostgreSQL 14+. The project itself does not require Composer or npm.
+1. Install PHP 8.1 or later with the `pdo_pgsql`, `pdo_mysql`, `mbstring` and `openssl` extensions, plus PostgreSQL 14+ or MySQL/MariaDB.
 2. Create a PostgreSQL project (Supabase is supported) and import `backend/schema.sql` using the provider's SQL editor. The schema is safe to run again and seeds categories plus one draft demo article.
 3. Copy `backend/config.local.php.example` to `backend/config.local.php`. Set the PostgreSQL host, port, database name, username/password, HTTPS base URL and two different random keys (`app_key` and `admin_setup_key`). Keep this local config private; it is excluded from version control and direct requests to `backend/` are denied.
 
@@ -41,6 +41,10 @@ This project retains the Cyber Junction homepage layout and adds PHP/PostgreSQL 
 6. The seeded CSIR CFTRI item is a **draft**. Use the dashboard to replace it with currently verified official information before publishing. `article.html` redirects to its managed URL; that URL returns 404 until the article is published.
 
 The PHP built-in server is not a production server. Keep it bound to localhost and do not expose it to the public internet.
+
+### XAMPP with MySQL/MariaDB
+
+The application can use either the existing PostgreSQL deployment or MySQL/MariaDB locally. Create/select the `cyber_junction` database in phpMyAdmin and import `backend/schema.mysql.sql`; it creates missing CMS tables and seeds categories/mappings without deleting existing records. In the private `backend/config.local.php`, set `db_driver` to `mysql`, configure the local database connection and keys, and set `base_url` to `http://localhost`. Then serve the repository as an Apache document root with `AllowOverride All` enabled so the existing `.htaccess` API and article routes work. The XAMPP PHP build must have `pdo_mysql` enabled.
 
 ## Homepage content
 
@@ -70,7 +74,7 @@ The article search includes title, category, short description and editor-suppli
 - [ ] Create, preview, save draft, publish, edit, unpublish and delete an article. Confirm title/slug uniqueness, a slug-change 301 redirect and category updates.
 - [ ] Confirm draft/unpublished/future-dated/inactive-category articles do not appear in article routes, search, category pages, homepage lists or sitemap; verify unknown URLs return HTTP 404.
 - [ ] Test all optional article fields empty and populated; verify links, tables, FAQs, related/previous-next articles, metadata, structured data and mobile layouts.
-- [ ] Test homepage text/link edits and list add/remove, category creation/deactivation, Latest Updates create/edit/hide/delete, search by title/category/keyword, the contact form and homepage section links.
+- [ ] Test homepage text/link edits and list add/remove, category creation/deactivation, Trending Jobs create/edit/hide/delete, search by title/category/keyword, the contact form and homepage section links.
 - [ ] Check PHP and web-server logs after invalid input and failed database connections; verify errors do not reveal stack traces or credentials to public responses.
 
 This source tree has no bundled PHP/PostgreSQL server. Runtime database, admin-authentication and Apache rewrite tests must be run after installing/configuring the local stack or deploying to the target PHP host.

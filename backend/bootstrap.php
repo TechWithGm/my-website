@@ -17,20 +17,34 @@ function cj_db(): PDO
         || ($config['admin_setup_key'] !== '' && strlen($config['admin_setup_key']) < 32)) {
         throw new RuntimeException('Configure CJ_DB_USER, a CJ_APP_KEY, and (if enabled) a CJ_ADMIN_SETUP_KEY with at least 32 characters.');
     }
-    $dsn = sprintf(
-        'pgsql:host=%s;port=%s;dbname=%s;sslmode=require',
-        $config['db_host'],
-        $config['db_port'],
-        $config['db_name']
-    );
+    if (!in_array($config['db_driver'], ['mysql', 'pgsql'], true)) {
+        throw new RuntimeException('CJ_DB_DRIVER must be mysql or pgsql.');
+    }
+    $dsn = $config['db_driver'] === 'mysql'
+        ? sprintf(
+            'mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4',
+            $config['db_host'],
+            $config['db_port'],
+            $config['db_name']
+        )
+        : sprintf(
+            'pgsql:host=%s;port=%s;dbname=%s;sslmode=require',
+            $config['db_host'],
+            $config['db_port'],
+            $config['db_name']
+        );
     $pdo = new PDO($dsn, $config['db_user'], $config['db_password'], [
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
         PDO::ATTR_EMULATE_PREPARES => false,
     ]);
-    $timezone = new DateTimeZone(cj_config()['timezone']);
+    $timezone = new DateTimeZone($config['timezone']);
     $offset = (new DateTimeImmutable('now', $timezone))->format('P');
-    $pdo->exec('SET TIME ZONE ' . $pdo->quote($offset));
+    if ($config['db_driver'] === 'mysql') {
+        $pdo->exec('SET time_zone = ' . $pdo->quote($offset));
+    } else {
+        $pdo->exec('SET TIME ZONE ' . $pdo->quote($offset));
+    }
     return $pdo;
 }
 
@@ -326,17 +340,25 @@ function cj_check_rate_limit(PDO $db, string $route, int $maximum, int $windowSe
 {
     $route = preg_replace('/[^a-z0-9_-]/i', '', $route) ?: 'public';
     $windowSeconds = max(1, min(86400, $windowSeconds));
-    $sql = "INSERT INTO api_rate_limits (ip_hash,route_name,request_count,window_started_at)
-            VALUES (?, ?, 1, CURRENT_TIMESTAMP)
-            ON CONFLICT (ip_hash,route_name) DO UPDATE SET
-              request_count = CASE
-                WHEN api_rate_limits.window_started_at < CURRENT_TIMESTAMP - INTERVAL '$windowSeconds seconds' THEN 1
-                ELSE api_rate_limits.request_count + 1
-              END,
-              window_started_at = CASE
-                WHEN api_rate_limits.window_started_at < CURRENT_TIMESTAMP - INTERVAL '$windowSeconds seconds' THEN CURRENT_TIMESTAMP
-                ELSE api_rate_limits.window_started_at
-              END";
+    if (cj_is_mysql($db)) {
+        $sql = "INSERT INTO api_rate_limits (ip_hash,route_name,request_count,window_started_at)
+                VALUES (?, ?, 1, CURRENT_TIMESTAMP)
+                ON DUPLICATE KEY UPDATE
+                  request_count = IF(window_started_at < DATE_SUB(CURRENT_TIMESTAMP, INTERVAL {$windowSeconds} SECOND), 1, request_count + 1),
+                  window_started_at = IF(window_started_at < DATE_SUB(CURRENT_TIMESTAMP, INTERVAL {$windowSeconds} SECOND), CURRENT_TIMESTAMP, window_started_at)";
+    } else {
+        $sql = "INSERT INTO api_rate_limits (ip_hash,route_name,request_count,window_started_at)
+                VALUES (?, ?, 1, CURRENT_TIMESTAMP)
+                ON CONFLICT (ip_hash,route_name) DO UPDATE SET
+                  request_count = CASE
+                    WHEN api_rate_limits.window_started_at < CURRENT_TIMESTAMP - INTERVAL '$windowSeconds seconds' THEN 1
+                    ELSE api_rate_limits.request_count + 1
+                  END,
+                  window_started_at = CASE
+                    WHEN api_rate_limits.window_started_at < CURRENT_TIMESTAMP - INTERVAL '$windowSeconds seconds' THEN CURRENT_TIMESTAMP
+                    ELSE api_rate_limits.window_started_at
+                  END";
+    }
     $stmt = $db->prepare($sql);
     $stmt->execute([cj_client_ip_hash(), $route]);
     $stmt = $db->prepare('SELECT request_count FROM api_rate_limits WHERE ip_hash=? AND route_name=?');
@@ -344,6 +366,11 @@ function cj_check_rate_limit(PDO $db, string $route, int $maximum, int $windowSe
     if ((int) $stmt->fetchColumn() > $maximum) {
         cj_send_json(['error' => 'Too many requests. Try again later.'], 429);
     }
+}
+
+function cj_is_mysql(PDO $db): bool
+{
+    return $db->getAttribute(PDO::ATTR_DRIVER_NAME) === 'mysql';
 }
 
 function cj_admin_count(PDO $db): int

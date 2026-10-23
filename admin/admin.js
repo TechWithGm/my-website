@@ -23,7 +23,7 @@
   let currentCategorySlug = null;
   let refreshTimer;
   const homepageTabs = [
-    ["latest-updates", "Latest Updates"],
+    ["latest-updates", "Trending Jobs"],
     ["jobs", "Government Jobs"],
     ["scholarship", "Scholarships"],
     ["admit", "Admit Card"],
@@ -113,6 +113,53 @@
     if (options.some((category) => category.slug === selected)) select.value = selected;
   }
 
+  function fillArticleCategorySelect(selectedSlug = categorySelect.value) {
+    categorySelect.replaceChildren();
+    const activeCategories = categories.filter((category) => Number(category.is_active));
+    const inactiveCategories = categories.filter((category) => !Number(category.is_active));
+
+    if (activeCategories.length) {
+      const activeGroup = document.createElement("optgroup");
+      activeGroup.label = "Active categories";
+      activeCategories.forEach((category) => {
+        const option = document.createElement("option");
+        option.value = category.slug;
+        option.textContent = category.name;
+        activeGroup.appendChild(option);
+      });
+      categorySelect.appendChild(activeGroup);
+    }
+
+    if (inactiveCategories.length) {
+      const inactiveGroup = document.createElement("optgroup");
+      inactiveGroup.label = "Inactive categories - activate in Categories to use for new articles";
+      inactiveCategories.forEach((category) => {
+        const option = document.createElement("option");
+        option.value = category.slug;
+        option.textContent = `${category.name} (inactive)`;
+        option.disabled = true;
+        inactiveGroup.appendChild(option);
+      });
+      categorySelect.appendChild(inactiveGroup);
+    }
+
+    if (selectedSlug && categories.some((category) => category.slug === selectedSlug)) {
+      categorySelect.value = selectedSlug;
+    }
+  }
+
+  function selectArticleCategory(slug) {
+    const option = Array.from(categorySelect.options).find((item) => item.value === slug);
+    if (!option) return false;
+    const category = categories.find((item) => item.slug === slug);
+    if (category && !Number(category.is_active)) {
+      option.disabled = false;
+      option.textContent = `${category.name} (inactive - existing article)`;
+    }
+    categorySelect.value = slug;
+    return categorySelect.value === slug;
+  }
+
   async function loadDashboard() {
     await loadArticleCatalog();
     await Promise.all([loadCategories(), loadArticles(), loadUpdates(), loadQuickLinks(), loadHomepage()]);
@@ -121,7 +168,7 @@
   async function loadCategories() {
     const result = await request("categories");
     categories = result.data;
-    fillSelect(categorySelect, categories.filter((category) => Number(category.is_active)));
+    fillArticleCategorySelect();
     fillSelect(document.getElementById("articleCategoryFilter"), categories, true);
     renderCategories();
   }
@@ -746,6 +793,7 @@
 
   function clearArticleForm() {
     articleForm.reset();
+    fillArticleCategorySelect();
     articleForm.elements.id.value = "";
     articleForm.elements.authorName.value = "Cyber Junction Team";
     articleForm.elements.status.value = "draft";
@@ -807,7 +855,8 @@
     Object.entries(values).forEach(([name, value]) => {
       const input = form.elements[name];
       if (!input) return;
-      if (input.type === "checkbox") input.checked = Boolean(value);
+      if (name === "categorySlug") selectArticleCategory(String(value ?? ""));
+      else if (input.type === "checkbox") input.checked = Boolean(value);
       else input.value = value ?? "";
     });
   }
@@ -816,6 +865,7 @@
     try {
       const article = articleCatalog.find((item) => item.id === id) || articles.find((item) => item.id === id);
       if (!article) throw new Error("Article not found in the article catalog.");
+      fillArticleCategorySelect(article.categorySlug);
       articleToForm(article);
       document.getElementById("articleFormTitle").textContent = "Edit article";
       document.getElementById("unpublishArticleButton").hidden = false;
@@ -997,7 +1047,7 @@
     form.elements.displayDate.value = update.display_date || "";
     form.elements.sortOrder.value = update.sort_order || 0;
     form.elements.isPublished.checked = Boolean(Number(update.is_published));
-    document.getElementById("updateFormTitle").textContent = "Edit latest update";
+    document.getElementById("updateFormTitle").textContent = "Edit trending job";
     form.scrollIntoView({ behavior: "smooth", block: "center" });
   }
 
@@ -1023,7 +1073,7 @@
         body: JSON.stringify(data)
       });
       resetUpdateForm();
-      showMessage(dashboardMessage, "Latest update saved.", false);
+      showMessage(dashboardMessage, "Trending job saved.", false);
       await loadUpdates();
     } catch (error) {
       showMessage(dashboardMessage, error.message);
@@ -1031,10 +1081,10 @@
   }
 
   async function deleteUpdate(update) {
-    if (!window.confirm(`Delete "${update.title}" from Latest Updates?`)) return;
+    if (!window.confirm(`Delete "${update.title}" from Trending Jobs?`)) return;
     try {
       await request(`latest-updates/${update.id}`, { method: "DELETE" });
-      showMessage(dashboardMessage, "Latest update deleted.", false);
+      showMessage(dashboardMessage, "Trending job deleted.", false);
       await loadUpdates();
     } catch (error) {
       showMessage(dashboardMessage, error.message);
@@ -1266,7 +1316,7 @@
   document.getElementById("newUpdateButton").addEventListener("click", () => {
     resetUpdateForm();
     document.getElementById("updateForm").hidden = false;
-    document.getElementById("updateFormTitle").textContent = "Add latest update";
+    document.getElementById("updateFormTitle").textContent = "Add trending job";
   });
   document.getElementById("cancelUpdateButton").addEventListener("click", resetUpdateForm);
   document.getElementById("updateForm").addEventListener("submit", saveUpdate);

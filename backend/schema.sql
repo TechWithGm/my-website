@@ -192,6 +192,7 @@ CREATE TRIGGER articles_set_changed_at
 INSERT INTO categories
   (slug, name, icon, color, home_visible, nav_visible, is_active, sort_order)
 VALUES
+  ('latest-updates', 'Trending Jobs', '', 'blue', 0, 0, 1, 0),
   ('jobs', 'Latest Jobs', '▣', 'blue', 1, 1, 1, 10),
   ('results', 'Results', '▤', 'green', 1, 1, 1, 20),
   ('admit', 'Admit Card', '🎟', 'orange', 1, 1, 1, 30),
@@ -212,6 +213,10 @@ VALUES
   ('popular-searches', 'Popular Searches', '⌕', 'orange', 0, 1, 1, 130),
   ('bihar-bhoomi', 'Bihar Bhoomi', '🌾', 'green', 0, 1, 1, 140)
 ON CONFLICT (slug) DO NOTHING;
+
+UPDATE categories
+SET name = 'Trending Jobs', icon = '', color = 'blue', is_active = 1, sort_order = 0
+WHERE slug = 'latest-updates';
 
 INSERT INTO category_home_tabs (category_slug, tab_slug)
 SELECT c.slug, mapping.tab_slug
@@ -237,7 +242,10 @@ WHERE mapping.tab_slug IS NOT NULL
   AND NOT EXISTS (
     SELECT 1 FROM category_home_tabs AS existing
     WHERE existing.category_slug = c.slug
-  )
+  );
+
+INSERT INTO category_home_tabs (category_slug, tab_slug)
+VALUES ('latest-updates', 'latest-updates')
 ON CONFLICT (category_slug, tab_slug) DO NOTHING;
 
 UPDATE homepage_settings

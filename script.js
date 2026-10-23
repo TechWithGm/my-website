@@ -96,6 +96,7 @@ function appendSafeLink(container, { title, url = "", displayDate = "", descript
 function appendArticleSummary(container, item, {
   titleClass = "home-update-link",
   readMoreClass = "home-update-read-more",
+  titleOnly = false,
   allowNoLink = false
 } = {}) {
   if (!item || typeof item.title !== "string") return false;
@@ -111,6 +112,8 @@ function appendArticleSummary(container, item, {
     title.rel = item.isArticle ? "" : "noopener noreferrer";
   }
   container.appendChild(title);
+
+  if (titleOnly) return true;
 
   if (typeof item.displayDate === "string" && item.displayDate) {
     const date = document.createElement("small");
@@ -146,7 +149,12 @@ function renderManagedCategory(category, items) {
       item.className = "latest-item home-article-summary";
       if (post.keywords) item.dataset.keywords = post.keywords;
       if (post.isArticle) item.dataset.articleLink = "true";
-      appendArticleSummary(item, post, { titleClass: "title", readMoreClass: "read-more", allowNoLink: true });
+      appendArticleSummary(item, post, {
+        titleClass: "title",
+        readMoreClass: "read-more",
+        titleOnly: post.isArticle,
+        allowNoLink: true
+      });
       latestList.appendChild(item);
     });
     return;
@@ -322,7 +330,7 @@ function appendHomeLink(container, item, className) {
   return true;
 }
 
-function renderHomeLayout(settings, items = [], homeArticles = {}) {
+function renderHomeLayout(settings, items = []) {
   const layout = settings?.homeLayout || {};
   const titles = layout.titles || {};
   const homeSections = [
@@ -356,24 +364,42 @@ function renderHomeLayout(settings, items = [], homeArticles = {}) {
     });
   }
 
-  const columns = layout.columns || {};
-  const useCustomLists = layout.useCustomLists || {};
   homeSections.forEach(([key, categoryId]) => {
     const list = document.getElementById(`home${key[0].toUpperCase()}${key.slice(1)}List`);
     if (!list) return;
     list.replaceChildren();
-    const customItems = Array.isArray(columns[key]) ? columns[key] : [];
-    const categoryItems = homeArticles[categoryId] || items.filter((item) => item.categoryId === categoryId);
-    const sourceItems = useCustomLists[key] === true
-      ? customItems
-      : categoryItems;
-    sourceItems.forEach((item) => {
+    const categoryItems = items.filter((item) => item.categoryId === categoryId);
+    categoryItems.forEach((item) => {
       const entry = document.createElement("li");
-      entry.className = "home-update-entry home-article-summary";
-      if (!appendArticleSummary(entry, item)) return;
+      entry.className = "home-update-entry";
+      if (!appendArticleSummary(entry, item, { titleOnly: true })) return;
       list.appendChild(entry);
     });
   });
+}
+
+function renderLatestArticleLinks(articles = []) {
+  const section = document.getElementById("latestArticleLinksSection");
+  const grid = document.getElementById("latestArticleLinks");
+  if (!section || !grid) return;
+
+  grid.replaceChildren();
+  if (!Array.isArray(articles)) {
+    section.hidden = true;
+    return;
+  }
+  articles.slice(0, 8).forEach((article) => {
+    if (!article || typeof article.title !== "string" || typeof article.url !== "string") return;
+    const href = homepageHref(article.url, "");
+    if (!href) return;
+
+    const link = document.createElement("a");
+    link.className = "home-latest-article-link";
+    link.href = href;
+    link.textContent = article.title;
+    grid.appendChild(link);
+  });
+  section.hidden = grid.children.length === 0;
 }
 
 function renderHomepageLinks(container, links, className = "") {
@@ -861,6 +887,7 @@ async function loadManagedSiteContent() {
     }
 
     const { categories, items, pages, settings } = content;
+    renderLatestArticleLinks(content.latestArticles);
     const categoryIds = new Set(categories.map((category) => category.id));
     knownSiteCategoryIds.forEach((id) => {
       if (categoryIds.has(id)) return;
@@ -872,7 +899,7 @@ async function loadManagedSiteContent() {
       if (staleCard) staleCard.hidden = true;
     });
     applyHomepageContent(settings);
-    renderHomeLayout(settings, items, content.homeArticles || {});
+    renderHomeLayout(settings, items);
 
     applyManagedPages(pages || []);
     categories.forEach((category) => {

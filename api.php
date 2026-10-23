@@ -51,22 +51,10 @@ function cj_public_content(PDO $db): array
             'sortOrder' => (int) $row['sort_order'],
             'managedContent' => in_array($row['slug'], [
                 'jobs', 'results', 'admit', 'admission', 'scholarship', 'yojana',
-                'bihar', 'career', 'education', 'other-updates',
+                'bihar', 'career', 'education', 'other-updates', 'latest-updates',
             ], true),
         ];
     }
-    $categories[] = [
-        'id' => 'latest-updates',
-        'name' => 'Latest Updates',
-        'icon' => '🔥',
-        'color' => 'blue',
-        'homeVisible' => false,
-        'navVisible' => false,
-        'url' => '',
-        'sortOrder' => 0,
-        'managedContent' => true,
-    ];
-
     $articleRows = cj_article_rows(
         $db,
         " WHERE a.status = 'published' AND a.published_at <= NOW() AND c.is_active = 1",
@@ -92,21 +80,42 @@ function cj_public_content(PDO $db): array
         $item = [
             'articleId' => $article['id'],
             'title' => $article['title'],
-            'url' => $article['url'],
+            'url' => '/' . rawurlencode($row['slug']) . '/',
             'displayDate' => cj_format_date($row['published_at']),
             'description' => $article['shortDescription'],
             'keywords' => $article['keywords'],
             'isArticle' => true,
         ];
         $byCategory[$row['category_slug']][] = $item;
-        foreach ($categoryHomeTabs[$row['category_slug']] ?? [] as $tabSlug) {
+        $articleTabs = $categoryHomeTabs[$row['category_slug']] ?? [];
+        if (array_key_exists($row['category_slug'], $homeArticles)
+            && !in_array($row['category_slug'], $articleTabs, true)) {
+            $articleTabs[] = $row['category_slug'];
+        }
+        foreach ($articleTabs as $tabSlug) {
             $homeArticles[$tabSlug][] = $item;
         }
     }
+    $latestArticleRows = cj_article_rows(
+        $db,
+        " WHERE a.status = 'published' AND a.published_at <= NOW() AND c.is_active = 1",
+        [],
+        ' ORDER BY a.published_at DESC, a.id DESC LIMIT 8'
+    );
+    $latestArticles = array_map(
+        static fn (array $row): array => [
+            'title' => $row['title'],
+            'url' => '/' . rawurlencode($row['slug']) . '/',
+        ],
+        $latestArticleRows
+    );
     foreach ($homeArticles as $tabSlug => $tabItems) {
         $homeArticles[$tabSlug] = array_slice($tabItems, 0, 30);
     }
     foreach ($byCategory as $categorySlug => $categoryItems) {
+        if ($categorySlug === 'latest-updates') {
+            continue;
+        }
         $items = array_merge($items, array_map(
             static fn (array $item): array => ['categoryId' => $categorySlug] + $item,
             array_slice($categoryItems, 0, 30)
@@ -155,6 +164,7 @@ function cj_public_content(PDO $db): array
         'categories' => $categories,
         'items' => $items,
         'homeArticles' => $homeArticles,
+        'latestArticles' => $latestArticles,
         'homeTabs' => cj_home_tab_definitions(),
         'pages' => [],
         'settings' => $settings,
@@ -273,10 +283,12 @@ function cj_admin_homepage(PDO $db, string $method): never
         if (strlen($encoded) > 1000000) {
             cj_send_json(['error' => 'Homepage content must be no larger than 1 MB.'], 422);
         }
-        $stmt = $db->prepare(
-            'INSERT INTO homepage_settings (id, content) VALUES (1, CAST(? AS JSONB))
-             ON CONFLICT (id) DO UPDATE SET content = EXCLUDED.content'
-        );
+        $sql = cj_is_mysql($db)
+            ? 'INSERT INTO homepage_settings (id, content) VALUES (1, ?)
+               ON DUPLICATE KEY UPDATE content = VALUES(content), updated_at = CURRENT_TIMESTAMP'
+            : 'INSERT INTO homepage_settings (id, content) VALUES (1, CAST(? AS JSONB))
+               ON CONFLICT (id) DO UPDATE SET content = EXCLUDED.content, updated_at = CURRENT_TIMESTAMP';
+        $stmt = $db->prepare($sql);
         $stmt->execute([$encoded]);
         cj_send_json(['data' => $content]);
     }
@@ -294,10 +306,12 @@ function cj_require_csrf_for_login(): void
 
 function cj_login_limited(PDO $db): bool
 {
-    $stmt = $db->prepare(
-        'SELECT COUNT(*) FROM admin_login_attempts
-         WHERE ip_hash = ? AND succeeded = 0 AND attempted_at >= CURRENT_TIMESTAMP - INTERVAL \'15 minutes\''
-    );
+    $sql = cj_is_mysql($db)
+        ? 'SELECT COUNT(*) FROM admin_login_attempts
+           WHERE ip_hash = ? AND succeeded = 0 AND attempted_at >= DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 15 MINUTE)'
+        : 'SELECT COUNT(*) FROM admin_login_attempts
+           WHERE ip_hash = ? AND succeeded = 0 AND attempted_at >= CURRENT_TIMESTAMP - INTERVAL \'15 minutes\'';
+    $stmt = $db->prepare($sql);
     $stmt->execute([cj_client_ip_hash()]);
     return (int) $stmt->fetchColumn() >= 8;
 }
@@ -310,7 +324,10 @@ function cj_record_login(PDO $db, bool $succeeded): void
         $stmt = $db->prepare('DELETE FROM admin_login_attempts WHERE ip_hash = ? AND succeeded = 0');
         $stmt->execute([cj_client_ip_hash()]);
     }
-    $db->exec("DELETE FROM admin_login_attempts WHERE attempted_at < CURRENT_TIMESTAMP - INTERVAL '2 days'");
+    $cleanupSql = cj_is_mysql($db)
+        ? 'DELETE FROM admin_login_attempts WHERE attempted_at < DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 2 DAY)'
+        : "DELETE FROM admin_login_attempts WHERE attempted_at < CURRENT_TIMESTAMP - INTERVAL '2 days'";
+    $db->exec($cleanupSql);
 }
 
 function cj_admin_article_input(array $input): array
@@ -332,7 +349,8 @@ function cj_admin_article_list(PDO $db): never
     $where = [];
     $params = [];
     if ($query !== '') {
-        $where[] = '(a.title ILIKE ? OR a.short_description ILIKE ? OR a.keywords ILIKE ?)';
+        $operator = cj_is_mysql($db) ? 'LIKE' : 'ILIKE';
+        $where[] = "(a.title {$operator} ? OR a.short_description {$operator} ? OR a.keywords {$operator} ?)";
         $term = '%' . str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $query) . '%';
         array_push($params, $term, $term, $term);
     }
@@ -354,41 +372,47 @@ function cj_admin_save_article(PDO $db, ?int $id): never
     cj_require_method($id === null ? 'POST' : 'PUT');
     cj_require_admin();
     $article = cj_admin_article_input(cj_json_input());
-    $category = $db->prepare('SELECT slug FROM categories WHERE slug = ? AND is_active = 1');
-    $category->execute([$article['category_slug']]);
-    if ($category->fetchColumn() === false) {
-        cj_send_json(['error' => 'Choose an active category.'], 422);
-    }
 
     try {
         $db->beginTransaction();
         $oldSlug = null;
+        $oldCategorySlug = null;
         if ($id !== null) {
-            $current = $db->prepare('SELECT slug FROM articles WHERE id = ? FOR UPDATE');
+            $current = $db->prepare('SELECT slug, category_slug FROM articles WHERE id = ? FOR UPDATE');
             $current->execute([$id]);
-            $oldSlug = $current->fetchColumn();
-            if ($oldSlug === false) {
+            $currentArticle = $current->fetch();
+            if ($currentArticle === false) {
                 $db->rollBack();
                 cj_send_json(['error' => 'Article not found.'], 404);
             }
+            $oldSlug = $currentArticle['slug'];
+            $oldCategorySlug = $currentArticle['category_slug'];
+        }
+        $category = $db->prepare('SELECT is_active FROM categories WHERE slug = ?');
+        $category->execute([$article['category_slug']]);
+        $categoryIsActive = $category->fetchColumn();
+        if ($categoryIsActive === false
+            || (!(bool) $categoryIsActive && $oldCategorySlug !== $article['category_slug'])) {
+            $db->rollBack();
+            cj_send_json(['error' => 'Choose an active category. Inactive categories can only remain assigned to their existing articles.'], 422);
         }
         if ($id === null) {
+            $returning = cj_is_mysql($db) ? '' : ' RETURNING id';
             $sql = 'INSERT INTO articles
                 (title, slug, category_slug, short_description, meta_description, keywords, featured_image,
                  author_name, status, is_featured, published_at, updated_at, main_content, important_notice,
                  sections, official_notification_url, apply_online_url, official_website_url)
                 VALUES (:title, :slug, :category_slug, :short_description, :meta_description, :keywords, :featured_image,
                  :author_name, :status, :is_featured, :published_at, :updated_at, :main_content, :important_notice,
-                 :sections, :official_notification_url, :apply_online_url, :official_website_url)
-                 RETURNING id';
+                 :sections, :official_notification_url, :apply_online_url, :official_website_url)' . $returning;
             $stmt = $db->prepare($sql);
             $stmt->execute($article);
-            $id = (int) $stmt->fetchColumn();
+            $id = (int) (cj_is_mysql($db) ? $db->lastInsertId() : $stmt->fetchColumn());
         } else {
             $sql = 'UPDATE articles SET title=:title, slug=:slug, category_slug=:category_slug,
                 short_description=:short_description, meta_description=:meta_description, keywords=:keywords,
                 featured_image=:featured_image, author_name=:author_name, status=:status, is_featured=:is_featured,
-                published_at=:published_at, updated_at=:updated_at, main_content=:main_content,
+                published_at=:published_at, updated_at=:updated_at, changed_at=CURRENT_TIMESTAMP, main_content=:main_content,
                 important_notice=:important_notice, sections=:sections,
                 official_notification_url=:official_notification_url, apply_online_url=:apply_online_url,
                 official_website_url=:official_website_url WHERE id=:id';
@@ -400,10 +424,12 @@ function cj_admin_save_article(PDO $db, ?int $id): never
                 $deleteTargetRedirect->execute([$article['slug']]);
                 $updateRedirects = $db->prepare('UPDATE article_redirects SET new_slug=? WHERE new_slug=?');
                 $updateRedirects->execute([$article['slug'], $oldSlug]);
-                $redirect = $db->prepare(
-                    'INSERT INTO article_redirects (old_slug, new_slug) VALUES (?, ?)
-                     ON CONFLICT (old_slug) DO UPDATE SET new_slug = EXCLUDED.new_slug'
-                );
+                $redirectSql = cj_is_mysql($db)
+                    ? 'INSERT INTO article_redirects (old_slug, new_slug) VALUES (?, ?)
+                       ON DUPLICATE KEY UPDATE new_slug = VALUES(new_slug)'
+                    : 'INSERT INTO article_redirects (old_slug, new_slug) VALUES (?, ?)
+                       ON CONFLICT (old_slug) DO UPDATE SET new_slug = EXCLUDED.new_slug';
+                $redirect = $db->prepare($redirectSql);
                 $redirect->execute([$oldSlug, $article['slug']]);
             }
         }
@@ -415,7 +441,7 @@ function cj_admin_save_article(PDO $db, ?int $id): never
         if ($db->inTransaction()) {
             $db->rollBack();
         }
-        if ($error->getCode() === '23505') {
+        if (in_array($error->getCode(), ['23505', '23000'], true)) {
             cj_send_json(['error' => 'That URL slug is already in use, or the change conflicts with existing data.'], 409);
         }
         throw $error;
@@ -460,7 +486,7 @@ function cj_admin_categories(PDO $db, string $method, ?string $slug): never
             if ($db->inTransaction()) {
                 $db->rollBack();
             }
-            if ($error->getCode() === '23505') {
+            if (in_array($error->getCode(), ['23505', '23000'], true)) {
                 cj_send_json(['error' => 'That category slug already exists.'], 409);
             }
             throw $error;
@@ -480,7 +506,7 @@ function cj_admin_categories(PDO $db, string $method, ?string $slug): never
         }
         $db->beginTransaction();
         try {
-            $stmt = $db->prepare('UPDATE categories SET name=?,icon=?,color=?,home_visible=?,nav_visible=?,is_active=?,sort_order=? WHERE slug=?');
+            $stmt = $db->prepare('UPDATE categories SET name=?,icon=?,color=?,home_visible=?,nav_visible=?,is_active=?,sort_order=?,updated_at=CURRENT_TIMESTAMP WHERE slug=?');
             $stmt->execute([$data['name'], $data['icon'], $data['color'], $data['home_visible'], $data['nav_visible'], $data['is_active'], $data['sort_order'], $slug]);
             if (!$stmt->rowCount() && !cj_category_exists($db, $slug)) {
                 $db->rollBack();
@@ -579,17 +605,22 @@ function cj_admin_latest_updates(PDO $db, string $method, ?int $id): never
         cj_require_admin();
         $input = cj_json_input();
         $data = cj_normalize_latest_update($input);
-        $stmt = $db->prepare('INSERT INTO latest_updates (title,url,description,display_date,is_published,sort_order) VALUES (?,?,?,?,?,?) RETURNING id');
+        $sql = 'INSERT INTO latest_updates (title,url,description,display_date,is_published,sort_order) VALUES (?,?,?,?,?,?)';
+        if (!cj_is_mysql($db)) {
+            $sql .= ' RETURNING id';
+        }
+        $stmt = $db->prepare($sql);
         $stmt->execute(array_values($data));
-        cj_send_json(['data' => ['id' => (int) $stmt->fetchColumn()] + $data], 201);
+        $id = cj_is_mysql($db) ? (int) $db->lastInsertId() : (int) $stmt->fetchColumn();
+        cj_send_json(['data' => ['id' => $id] + $data], 201);
     }
     if ($method === 'PUT' && $id !== null) {
         cj_require_admin();
         $data = cj_normalize_latest_update(cj_json_input());
-        $stmt = $db->prepare('UPDATE latest_updates SET title=?,url=?,description=?,display_date=?,is_published=?,sort_order=? WHERE id=?');
+        $stmt = $db->prepare('UPDATE latest_updates SET title=?,url=?,description=?,display_date=?,is_published=?,sort_order=?,updated_at=CURRENT_TIMESTAMP WHERE id=?');
         $stmt->execute([...array_values($data), $id]);
         if (!$stmt->rowCount() && !cj_latest_update_exists($db, $id)) {
-            cj_send_json(['error' => 'Latest update not found.'], 404);
+            cj_send_json(['error' => 'Trending job not found.'], 404);
         }
         cj_send_json(['data' => ['id' => $id] + $data]);
     }
@@ -598,7 +629,7 @@ function cj_admin_latest_updates(PDO $db, string $method, ?int $id): never
         $stmt = $db->prepare('DELETE FROM latest_updates WHERE id = ?');
         $stmt->execute([$id]);
         if (!$stmt->rowCount()) {
-            cj_send_json(['error' => 'Latest update not found.'], 404);
+            cj_send_json(['error' => 'Trending job not found.'], 404);
         }
         cj_send_json(['success' => true]);
     }
@@ -621,12 +652,14 @@ function cj_admin_quick_links(PDO $db, string $method, ?string $identifier): nev
                 cj_lock_quick_link_capacity($db);
                 cj_check_quick_link_capacity($db);
             }
-            $stmt = $db->prepare(
-                'INSERT INTO quick_links (title,url,bg_color,text_color,position_order,is_active)
-                 VALUES (?,?,?,?,?,?) RETURNING id'
-            );
+            $sql = 'INSERT INTO quick_links (title,url,bg_color,text_color,position_order,is_active)
+                    VALUES (?,?,?,?,?,?)';
+            if (!cj_is_mysql($db)) {
+                $sql .= ' RETURNING id';
+            }
+            $stmt = $db->prepare($sql);
             $stmt->execute(array_values($data));
-            $id = (int) $stmt->fetchColumn();
+            $id = cj_is_mysql($db) ? (int) $db->lastInsertId() : (int) $stmt->fetchColumn();
             $db->commit();
         } catch (Throwable $error) {
             if ($db->inTransaction()) {
@@ -663,7 +696,7 @@ function cj_admin_quick_links(PDO $db, string $method, ?string $identifier): nev
         }
         $db->beginTransaction();
         try {
-            $stmt = $db->prepare('UPDATE quick_links SET position_order = ? WHERE id = ?');
+            $stmt = $db->prepare('UPDATE quick_links SET position_order = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?');
             foreach ($ids as $position => $id) {
                 $stmt->execute([$position, $id]);
             }
@@ -690,7 +723,7 @@ function cj_admin_quick_links(PDO $db, string $method, ?string $identifier): nev
                 cj_check_quick_link_capacity($db, (int) $id);
             }
             $stmt = $db->prepare(
-                'UPDATE quick_links SET title=?,url=?,bg_color=?,text_color=?,position_order=?,is_active=? WHERE id=?'
+                'UPDATE quick_links SET title=?,url=?,bg_color=?,text_color=?,position_order=?,is_active=?,updated_at=CURRENT_TIMESTAMP WHERE id=?'
             );
             $stmt->execute([...array_values($data), $id]);
             if (!$stmt->rowCount() && !cj_quick_link_exists($db, (int) $id)) {
@@ -769,6 +802,13 @@ function cj_quick_link_exists(PDO $db, int $id): bool
 
 function cj_lock_quick_link_capacity(PDO $db): void
 {
+    if (cj_is_mysql($db)) {
+        $locked = (int) $db->query("SELECT GET_LOCK('cj_quick_links_active_limit', 5)")->fetchColumn();
+        if ($locked !== 1) {
+            throw new RuntimeException('Could not lock homepage quick-link capacity.');
+        }
+        return;
+    }
     $db->query("SELECT pg_advisory_xact_lock(hashtext('cj_quick_links_active_limit'))");
 }
 
@@ -852,19 +892,25 @@ function cj_admin_dispatch(PDO $db, array $segments): never
         if (!$email || strlen($password) < 12 || strlen($password) > 200) {
             cj_send_json(['error' => 'Enter a valid email and a password of at least 12 characters.'], 422);
         }
-        $setupLock = (int) $db->query("SELECT CASE WHEN pg_try_advisory_lock(hashtext('cj_admin_setup')) THEN 1 ELSE 0 END")->fetchColumn();
+        $setupLock = cj_is_mysql($db)
+            ? (int) $db->query("SELECT GET_LOCK('cj_admin_setup', 0)")->fetchColumn()
+            : (int) $db->query("SELECT CASE WHEN pg_try_advisory_lock(hashtext('cj_admin_setup')) THEN 1 ELSE 0 END")->fetchColumn();
         if ($setupLock !== 1) {
             cj_send_json(['error' => 'Administrator setup is busy. Try again shortly.'], 503);
         }
         if (cj_admin_count($db) !== 0) {
-            $db->query("SELECT pg_advisory_unlock(hashtext('cj_admin_setup'))");
+            cj_is_mysql($db)
+                ? $db->query("SELECT RELEASE_LOCK('cj_admin_setup')")
+                : $db->query("SELECT pg_advisory_unlock(hashtext('cj_admin_setup'))");
             cj_send_json(['error' => 'Initial administrator setup is already closed.'], 409);
         }
         try {
             $stmt = $db->prepare('INSERT INTO admins (email,password_hash) VALUES (?,?)');
             $stmt->execute([$email, password_hash($password, PASSWORD_DEFAULT)]);
         } finally {
-            $db->query("SELECT pg_advisory_unlock(hashtext('cj_admin_setup'))");
+            cj_is_mysql($db)
+                ? $db->query("SELECT RELEASE_LOCK('cj_admin_setup')")
+                : $db->query("SELECT pg_advisory_unlock(hashtext('cj_admin_setup'))");
         }
         cj_record_login($db, true);
         cj_send_json(['success' => true, 'message' => 'Administrator created. Sign in to continue.'], 201);
@@ -973,7 +1019,8 @@ try {
             $params[] = cj_slug($category, 'Category');
         }
         if ($query !== '') {
-            $where .= ' AND (a.title ILIKE ? OR a.short_description ILIKE ? OR a.keywords ILIKE ? OR c.name ILIKE ?)';
+            $operator = cj_is_mysql($db) ? 'LIKE' : 'ILIKE';
+            $where .= " AND (a.title {$operator} ? OR a.short_description {$operator} ? OR a.keywords {$operator} ? OR c.name {$operator} ?)";
             $term = '%' . str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $query) . '%';
             array_push($params, $term, $term, $term, $term);
         }

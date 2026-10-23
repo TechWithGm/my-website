@@ -27,6 +27,7 @@ function cj_config(): array
     }
 
     $config = [
+        'db_driver' => strtolower($read('db_driver', 'CJ_DB_DRIVER', 'pgsql')),
         'db_host' => $read('db_host', 'CJ_DB_HOST', '127.0.0.1'),
         'db_port' => $read('db_port', 'CJ_DB_PORT', '5432'),
         'db_name' => $read('db_name', 'CJ_DB_NAME', 'postgres'),

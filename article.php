@@ -243,7 +243,7 @@ try {
             <?php if ($related): ?><section class="article-related"><h2>Related Articles</h2><div class="public-article-grid"><?php foreach ($related as $row) { cj_render_article_card($row); } ?></div></section><?php endif; ?>
           </article>
           <aside class="article-sidebar">
-            <section class="public-aside-card"><h2>Latest Updates</h2>
+            <section class="public-aside-card"><h2>Trending Jobs</h2>
               <?php foreach ($latest as $item): ?><a href="/<?= cj_h(rawurlencode($item['slug'])) ?>/"><?= cj_h($item['title']) ?></a><?php endforeach; ?>
               <?php if (!$latest): ?><p class="muted">No published updates yet.</p><?php endif; ?>
             </section>

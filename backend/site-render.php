@@ -35,7 +35,7 @@ function cj_site_header(): void
           <a href="/index.html#bihar-bhoomi">Bihar Bhoomi</a>
           <a href="/index.html#homeQuickLinks">Quick Links</a>
           <a href="/index.html#aadhaar-services">Aadhaar Services</a>
-          <a href="/index.html#latestList">Latest Updates</a>
+          <a href="/index.html#latestList">Trending Jobs</a>
           <a href="/index.html#homeResultsTitle">Result</a>
         </div>
         <div class="nav-more">
@@ -74,7 +74,7 @@ function cj_site_footer(): void
           <a href="/index.html#bihar-bhoomi">Bihar Bhoomi Services</a>
           <a href="/index.html#homeQuickLinks">Important Updates</a>
           <a href="/index.html#aadhaar-services">Aadhaar Services</a>
-          <a href="/index.html#latestList">Latest Updates</a>
+          <a href="/index.html#latestList">Trending Jobs</a>
           <a href="/about-us/">About Us</a>
           <a href="/contact-us/">Contact Us</a>
           <a href="/terms-and-conditions/">Terms &amp; Conditions</a>

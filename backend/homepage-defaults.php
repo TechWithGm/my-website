@@ -5,7 +5,7 @@ declare(strict_types=1);
 function cj_home_tab_definitions(): array
 {
     return [
-        'latest-updates' => 'Latest Updates',
+        'latest-updates' => 'Trending Jobs',
         'results' => 'Results',
         'admit' => 'Admit Card',
         'jobs' => 'Government Jobs',
@@ -304,7 +304,7 @@ function cj_homepage_defaults(): array
                 ['title' => 'Bihar Bhoomi Services', 'url' => '/index.html#bihar-bhoomi'],
                 ['title' => 'Important Updates', 'url' => '/index.html#homeQuickLinks'],
                 ['title' => 'Aadhaar Services', 'url' => '/index.html#aadhaar-services'],
-                ['title' => 'Latest Updates', 'url' => '/index.html#latestList'],
+                ['title' => 'Trending Jobs', 'url' => '/index.html#latestList'],
                 ['title' => 'About Us', 'url' => '/about-us/'],
                 ['title' => 'Contact Us', 'url' => '/contact-us/'],
                 ['title' => 'Terms & Conditions', 'url' => '/terms-and-conditions/'],
