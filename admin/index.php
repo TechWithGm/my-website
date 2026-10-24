@@ -54,6 +54,7 @@ header('Cache-Control: no-store');
         <button class="tab-button" type="button" data-panel="updatesPanel">Trending Jobs</button>
         <button class="tab-button" type="button" data-panel="categoriesPanel">Categories</button>
         <button class="tab-button" type="button" data-panel="homepagePanel">Homepage</button>
+        <button class="tab-button" type="button" data-panel="customerDataPanel">Customer Data</button>
       </nav>
       <p class="notice" id="dashboardMessage" role="status" aria-live="polite"></p>
 
@@ -159,10 +160,31 @@ header('Cache-Control: no-store');
           <div><p class="eyebrow">SITE CONTENT</p><h1>Homepage</h1></div>
           <button class="secondary-button" id="manageHomepageArticlesButton" type="button">Manage articles</button>
         </div>
-        <p class="muted">Homepage cards automatically show published articles from their matching category. Manage article content and format in Articles; switch a card to custom links only when needed. Article form and article-page format are unchanged.</p>
+        <p class="muted">Manage homepage section visibility and order here. Homepage cards show published articles from their assigned categories; manage category-to-section mapping in Categories and article content in Articles.</p>
+        <div id="homepageModuleEditor" class="homepage-module-editor"></div>
         <div id="homeLayoutEditor" class="homepage-link-editor"></div>
         <div class="homepage-editor" id="homepageEditor"></div>
         <div class="form-actions"><button class="primary-button" id="saveHomepageButton" type="button">Save homepage</button></div>
+      </section>
+
+      <section class="manager-panel" id="customerDataPanel" hidden>
+        <div class="panel-heading">
+          <div><p class="eyebrow">CUSTOMER DATA</p><h1>Contact messages</h1></div>
+          <button class="secondary-button" id="refreshCustomerDataButton" type="button">Refresh</button>
+        </div>
+        <div class="table-scroll">
+          <table><thead><tr><th>Name</th><th>Email</th><th>Message</th><th>Received</th><th>Actions</th></tr></thead><tbody id="contactMessageRows"></tbody></table>
+        </div>
+        <p class="form-error" id="contactDataError" role="alert"></p>
+        <p class="empty-state" id="contactMessageEmpty" hidden>No contact messages.</p>
+        <div class="panel-heading">
+          <div><p class="eyebrow">EMAIL UPDATES</p><h2>Subscribers</h2></div>
+        </div>
+        <div class="table-scroll">
+          <table><thead><tr><th>Email</th><th>Subscribed</th><th>Actions</th></tr></thead><tbody id="subscriberRows"></tbody></table>
+        </div>
+        <p class="form-error" id="subscriberDataError" role="alert"></p>
+        <p class="empty-state" id="subscriberEmpty" hidden>No subscribers.</p>
       </section>
     </section>
   </main>

@@ -35,6 +35,8 @@ function cj_config(): array
         'db_password' => $read('db_password', 'CJ_DB_PASSWORD'),
         'app_key' => $read('app_key', 'CJ_APP_KEY'),
         'admin_setup_key' => $read('admin_setup_key', 'CJ_ADMIN_SETUP_KEY'),
+        'email_notifier_url' => rtrim($read('email_notifier_url', 'CJ_EMAIL_NOTIFIER_URL'), '/'),
+        'email_notifier_token' => $read('email_notifier_token', 'CJ_EMAIL_NOTIFIER_TOKEN'),
         'base_url' => $baseUrl,
         'timezone' => $read('timezone', 'CJ_TIMEZONE', 'Asia/Kolkata'),
     ];

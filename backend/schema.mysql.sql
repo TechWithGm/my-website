@@ -122,6 +122,13 @@ CREATE TABLE IF NOT EXISTS contact_messages (
   INDEX idx_contact_messages_created (created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS newsletter_subscribers (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  email VARCHAR(254) NOT NULL UNIQUE,
+  subscribed_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_newsletter_subscribers_created (subscribed_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 INSERT IGNORE INTO categories
   (slug, name, icon, color, home_visible, nav_visible, is_active, sort_order)
 VALUES

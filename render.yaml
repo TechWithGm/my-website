@@ -23,5 +23,29 @@ services:
         sync: false
       - key: CJ_BASE_URL
         value: https://cyber-junction.onrender.com
+      - key: CJ_EMAIL_NOTIFIER_URL
+        fromService:
+          type: web
+          name: cyber-junction-email-notifier
+          property: host
+      - key: CJ_EMAIL_NOTIFIER_TOKEN
+        sync: false
       - key: CJ_TIMEZONE
         value: Asia/Kolkata
+  - type: web
+    name: cyber-junction-email-notifier
+    runtime: node
+    plan: free
+    region: singapore
+    buildCommand: npm ci --omit=dev
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: SENDGRID_API_KEY
+        sync: false
+      - key: SENDGRID_FROM_EMAIL
+        sync: false
+      - key: EMAIL_NOTIFICATION_TOKEN
+        sync: false
+      - key: SITE_NAME
+        value: Cyber Junction

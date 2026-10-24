@@ -28,7 +28,8 @@ This project retains the Cyber Junction homepage layout and adds PHP/PostgreSQL 
    ```
 
    Generate the second key separately. Both keys must be at least 32 characters. Do not reuse the database password as either key.
-4. From the project root, run the PHP development server (local development only):
+4. Configure the SendGrid article-publication email notifier using the steps in [Email notifications](#email-notifications).
+5. From the project root, run the PHP development server (local development only):
 
    ```powershell
    Set-Location "D:\TRY CJ"
@@ -37,8 +38,8 @@ This project retains the Cyber Junction homepage layout and adds PHP/PostgreSQL 
 
    If XAMPP is installed in another directory, use that installation's `php.exe` path.
 
-5. Open `http://localhost:5000/index.html` and `http://localhost:5000/admin/`. On first use, provide the configured setup key, administrator email and a unique password of at least 12 characters. Once the first administrator exists, the setup endpoint closes automatically; remove `admin_setup_key` from the local config afterwards.
-6. The seeded CSIR CFTRI item is a **draft**. Use the dashboard to replace it with currently verified official information before publishing. `article.html` redirects to its managed URL; that URL returns 404 until the article is published.
+6. Open `http://localhost:5000/index.html` and `http://localhost:5000/admin/`. On first use, provide the configured setup key, administrator email and a unique password of at least 12 characters. Once the first administrator exists, the setup endpoint closes automatically; remove `admin_setup_key` from the local config afterwards.
+7. The seeded CSIR CFTRI item is a **draft**. Use the dashboard to replace it with currently verified official information before publishing. `article.html` redirects to its managed URL; that URL returns 404 until the article is published.
 
 The PHP built-in server is not a production server. Keep it bound to localhost and do not expose it to the public internet.
 
@@ -47,6 +48,41 @@ The PHP built-in server is not a production server. Keep it bound to localhost a
 The application can use either the existing PostgreSQL deployment or MySQL/MariaDB locally. Create/select the `cyber_junction` database in phpMyAdmin and import `backend/schema.mysql.sql`; it creates missing CMS tables and seeds categories/mappings without deleting existing records. In the private `backend/config.local.php`, set `db_driver` to `mysql`, configure the local database connection and keys, and set `base_url` to `http://localhost`. Then serve the repository as an Apache document root with `AllowOverride All` enabled so the existing `.htaccess` API and article routes work. The XAMPP PHP build must have `pdo_mysql` enabled.
 
 The standard local connection values are `db_driver=mysql`, `db_host=127.0.0.1`, `db_port=3306`, `db_name=cyber_junction`, `base_url=http://localhost`, and `timezone=Asia/Kolkata`. Keep your MySQL username/password and independent random `app_key` private in `backend/config.local.php`; do not use local MySQL credentials on Render.
+
+## Email notifications
+
+The Node.js notifier sends an email to each newsletter subscriber **only when an article is published for the first time** from the admin dashboard. Editing an already-published article does not send another email. Draft saves and unpublishing do not send email. Future-dated articles are not emailed at publish time; publish them after their intended release time if subscribers should be notified. The PHP API contacts the private Node service using a shared bearer token; only the Node service holds the SendGrid API key.
+
+### Local setup
+
+1. Create a SendGrid account, create an API key with Mail Send permission, and verify a sender address/domain in SendGrid. Use that verified address as `SENDGRID_FROM_EMAIL`.
+2. From the repository root, install Node.js 20 or newer and run:
+
+   ```powershell
+   npm ci
+   Copy-Item .env.example .env
+   ```
+
+3. Edit the private `.env` file. Set `SENDGRID_API_KEY` and `SENDGRID_FROM_EMAIL`. Generate a random secret of at least 32 characters and put the same value in `EMAIL_NOTIFICATION_TOKEN` and in `backend/config.local.php` as `email_notifier_token`. Set `email_notifier_url` in that PHP config to `http://127.0.0.1:4000`.
+4. Start the email notifier in one VS Code terminal:
+
+   ```powershell
+   npm start
+   ```
+
+   Keep it running while testing the PHP site. In a second terminal, start the PHP development server as described above. Check `http://127.0.0.1:4000/health` for `{"status":"ok"}`.
+5. Add an email address through the homepage Subscribe form, then publish a new article in the admin dashboard. A successful publish displays how many subscribers were notified. SendGrid delivery requires a real verified sender and API key; test with an address you control.
+
+Never commit `.env`, SendGrid API keys, or the shared internal token. The notifier validates the shared token, sends each recipient in a separate SendGrid personalization, and caps one publication event at 5,000 subscribers.
+
+### Render deployment
+
+The Render Blueprint now defines a separate Node web service named `cyber-junction-email-notifier` and connects its host to the PHP service. In the Render dashboard, set the following secret values:
+
+- On `cyber-junction-email-notifier`, set `SENDGRID_API_KEY`, `SENDGRID_FROM_EMAIL`, and `EMAIL_NOTIFICATION_TOKEN`.
+- On `cyber-junction`, set `CJ_EMAIL_NOTIFIER_TOKEN` to the exact same random value as `EMAIL_NOTIFICATION_TOKEN`.
+
+Deploy both services, confirm the Node service health check passes, and re-run the SendGrid setup check above. For production notifications, use an always-on Node service plan so a sleeping service does not delay an admin publish request. Apply the existing subscriber-table schema to the hosted database before publishing; see `backend/schema.sql` for PostgreSQL/Supabase or `backend/schema.mysql.sql` for MySQL.
 
 ## Homepage content
 

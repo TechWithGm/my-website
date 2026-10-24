@@ -9,6 +9,8 @@ return [
     'db_password' => 'CHANGE_THIS_DATABASE_PASSWORD',
     'app_key' => 'CHANGE_THIS_TO_A_RANDOM_SECRET_OF_AT_LEAST_32_CHARACTERS',
     'admin_setup_key' => 'CHANGE_THIS_TO_A_DIFFERENT_RANDOM_SECRET',
+    'email_notifier_url' => 'http://127.0.0.1:4000',
+    'email_notifier_token' => 'CHANGE_THIS_TO_THE_SAME_RANDOM_SECRET_AS_THE_NODE_NOTIFIER',
     'base_url' => 'http://localhost:5000',
     'timezone' => 'Asia/Kolkata',
 ];

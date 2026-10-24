@@ -1,6 +1,3 @@
-const latestPosts = [];
-
-const latestList = document.getElementById("latestList");
 const searchInput = document.getElementById("searchInput");
 const searchBtn = document.getElementById("searchBtn");
 const searchResults = document.getElementById("searchResults");
@@ -45,13 +42,14 @@ async function submitContactForm(event) {
     const result = await response.json();
 
     if (!response.ok) {
-      resultElement.textContent = result.message || "जानकारी सेव नहीं हो सकी। कृपया दोबारा प्रयास करें।";
+      resultElement.textContent = result.error || "जानकारी सेव नहीं हो सकी। कृपया दोबारा प्रयास करें।";
       return;
     }
 
-    resultElement.textContent = "आपकी जानकारी सेव हो गई है";
+    resultElement.textContent = result.message || "आपकी जानकारी सेव हो गई है";
     form.reset();
   } catch (error) {
+    console.error("Could not submit contact message:", error);
     resultElement.textContent = "सर्वर से संपर्क नहीं हो सका। कृपया बाद में दोबारा प्रयास करें।";
   } finally {
     submitButton.disabled = false;
@@ -59,16 +57,6 @@ async function submitContactForm(event) {
 }
 
 contactForm.addEventListener("submit", submitContactForm);
-
-function renderPosts(posts = latestPosts) {
-  latestList.innerHTML = "";
-  posts.forEach(([title, date]) => {
-    const item = document.createElement("div");
-    item.className = "latest-item";
-    item.innerHTML = `<span class="title">${title}</span><span class="date">${date}</span>`;
-    latestList.appendChild(item);
-  });
-}
 
 function appendSafeLink(container, { title, url = "", displayDate = "", description = "", keywords = "", isArticle = false }) {
   const link = document.createElement("a");
@@ -142,23 +130,7 @@ function appendArticleSummary(container, item, {
 }
 
 function renderManagedCategory(category, items) {
-  if (category.id === "latest-updates") {
-    latestList.replaceChildren();
-    items.forEach((post) => {
-      const item = document.createElement("article");
-      item.className = "latest-item home-article-summary";
-      if (post.keywords) item.dataset.keywords = post.keywords;
-      if (post.isArticle) item.dataset.articleLink = "true";
-      appendArticleSummary(item, post, {
-        titleClass: "title",
-        readMoreClass: "read-more",
-        titleOnly: post.isArticle,
-        allowNoLink: true
-      });
-      latestList.appendChild(item);
-    });
-    return;
-  }
+  if (category.id === "latest-updates") return;
 
   const cardGrid = document.querySelector(".card-grid");
   let card = Array.from(cardGrid.querySelectorAll(":scope > [data-managed-category]"))
@@ -299,7 +271,6 @@ function homepageHref(value, fallback = "#") {
     "#admission": "#homeAdmissionTitle",
     "#scholarship": "#homeScholarshipTitle",
     "#yojana": "#homeImportantTitle",
-    "#latest-news": "#latestList",
     "#about-us": "/about-us/",
     "#contact-us": "/contact-us/",
     "#terms-and-conditions": "/terms-and-conditions/",
@@ -321,6 +292,7 @@ function appendHomeLink(container, item, className) {
   const link = document.createElement("a");
   link.className = className;
   link.textContent = item.title;
+  link.title = item.title;
   link.href = href;
   if (/^https:\/\//i.test(href)) {
     link.target = "_blank";
@@ -330,7 +302,7 @@ function appendHomeLink(container, item, className) {
   return true;
 }
 
-function renderHomeLayout(settings, items = []) {
+function renderHomeLayout(settings, items = [], homeArticles = {}) {
   const layout = settings?.homeLayout || {};
   const titles = layout.titles || {};
   const homeSections = [
@@ -368,38 +340,99 @@ function renderHomeLayout(settings, items = []) {
     const list = document.getElementById(`home${key[0].toUpperCase()}${key.slice(1)}List`);
     if (!list) return;
     list.replaceChildren();
-    const categoryItems = items.filter((item) => item.categoryId === categoryId);
+    const useCustomList = layout.useCustomLists?.[key] === true;
+    const categoryItems = useCustomList
+      ? (Array.isArray(layout.columns?.[key]) ? layout.columns[key] : [])
+      : (Array.isArray(homeArticles[categoryId])
+        ? homeArticles[categoryId]
+        : items.filter((item) => item.categoryId === categoryId));
     categoryItems.forEach((item) => {
       const entry = document.createElement("li");
       entry.className = "home-update-entry";
-      if (!appendArticleSummary(entry, item, { titleOnly: true })) return;
+      if (useCustomList) {
+        if (!appendHomeLink(entry, item, "home-update-link")) return;
+      } else if (!appendArticleSummary(entry, item, { titleOnly: true })) return;
       list.appendChild(entry);
     });
   });
 }
 
-function renderLatestArticleLinks(articles = []) {
-  const section = document.getElementById("latestArticleLinksSection");
-  const grid = document.getElementById("latestArticleLinks");
-  if (!section || !grid) return;
+function applyHomepageModuleLayout(layout) {
+  const moduleOrder = layout?.moduleOrder || {};
+  const moduleVisibility = layout?.moduleVisibility || {};
+  const groups = [
+    {
+      id: "primary",
+      container: document.getElementById("home"),
+      modules: {
+        hero: document.querySelector("#home > .hero"),
+        biharBhoomi: document.querySelector("#home > .home-bhoomi-details"),
+        quickLinks: document.querySelector("#home > .home-quick-links"),
+        content: document.querySelector("#home > .layout"),
+      }
+    },
+    {
+      id: "content",
+      container: document.querySelector(".content"),
+      modules: {
+        homeUpdates: document.getElementById("home-update-grid"),
+        categoryCards: document.querySelector(".card-grid"),
+        about: document.querySelector(".content > .about"),
+      }
+    },
+    {
+      id: "articleSections",
+      container: document.getElementById("home-update-grid"),
+      modules: Object.fromEntries(
+        Array.from(document.querySelectorAll("[data-home-section]"))
+          .map((element) => [element.dataset.homeSection, element])
+      )
+    }
+  ];
 
-  grid.replaceChildren();
-  if (!Array.isArray(articles)) {
-    section.hidden = true;
-    return;
-  }
-  articles.slice(0, 8).forEach((article) => {
-    if (!article || typeof article.title !== "string" || typeof article.url !== "string") return;
-    const href = homepageHref(article.url, "");
-    if (!href) return;
-
-    const link = document.createElement("a");
-    link.className = "home-latest-article-link";
-    link.href = href;
-    link.textContent = article.title;
-    grid.appendChild(link);
+  groups.forEach(({ id, container, modules }) => {
+    const moduleIds = Object.keys(modules);
+    const configuredOrder = Array.isArray(moduleOrder[id]) ? moduleOrder[id] : [];
+    const orderedIds = [
+      ...new Set(configuredOrder.filter((moduleId) => moduleIds.includes(moduleId))),
+      ...moduleIds.filter((moduleId) => !configuredOrder.includes(moduleId))
+    ];
+    orderedIds.forEach((moduleId) => {
+      const element = modules[moduleId];
+      if (!element) return;
+      if (typeof moduleVisibility[moduleId] === "boolean") {
+        element.hidden = !moduleVisibility[moduleId];
+      }
+      if (container === element.parentElement) container.appendChild(element);
+    });
   });
-  section.hidden = grid.children.length === 0;
+
+  const homepage = document.getElementById("home");
+  homepage.querySelectorAll(":scope > .page-view").forEach((section) => {
+    homepage.appendChild(section);
+  });
+
+  const navigationSections = {
+    "bihar-bhoomi": "biharBhoomi",
+    homeQuickLinks: "quickLinks",
+    homeResultsTitle: "results",
+    homeAdmitTitle: "admit",
+    homeJobsTitle: "jobs",
+    homeScholarshipTitle: "scholarship",
+    homeAnswerKeyTitle: "answerKey",
+    homeSyllabusTitle: "syllabus",
+    homeAdmissionTitle: "admission",
+    homeCertificateTitle: "certificate",
+    homeOfflineOutsourcingJobTitle: "offlineOutsourcingJob",
+    homeImportantTitle: "important",
+    about: "about",
+  };
+  document.querySelectorAll(".main-nav a[href], .nav-more-menu a[href]").forEach((link) => {
+    const sectionId = link.hash.slice(1);
+    const moduleId = navigationSections[sectionId];
+    if (!moduleId) return;
+    link.hidden = moduleVisibility.content === false || moduleVisibility[moduleId] === false;
+  });
 }
 
 function renderHomepageLinks(container, links, className = "") {
@@ -412,6 +445,8 @@ function renderHomepageLinks(container, links, className = "") {
     if (item.title.trim().toLowerCase() === "customer login"
       || (typeof item.url === "string" && /^\/customer-portal(?:\/|$)/i.test(item.url.trim()))) return;
     const href = homepageHref(item.url, "");
+    const target = href.toLowerCase().split("#").pop();
+    if (target === "aadhaar-services" || target === "latestlist") return;
     const link = document.createElement(href ? "a" : "span");
     link.textContent = item.title;
     if (href) link.href = href;
@@ -540,28 +575,6 @@ function applyHomepageContent(settings) {
       arrow.setAttribute("aria-hidden", "true");
       arrow.textContent = "→";
       button.appendChild(arrow);
-    }
-  }
-
-  const aadhaar = settings.aadhaarServices || {};
-  const aadhaarRoot = document.querySelector(".aadhaar-services-card");
-  if (aadhaarRoot) {
-    const title = aadhaarRoot.querySelector(".side-title");
-    if (title && typeof aadhaar.title === "string") title.textContent = aadhaar.title;
-    renderHomepageLinks(aadhaarRoot.querySelector(".post-list"), aadhaar.items);
-  }
-
-  const promo = document.querySelector(".left-sidebar .promo");
-  const promoContent = Array.isArray(settings.promos) ? settings.promos[0] : null;
-  if (promo && promoContent) {
-    const icon = promo.querySelector(".promo-icon");
-    const title = promo.querySelector("h3");
-    const button = promo.querySelector(".yellow-btn");
-    if (icon && typeof promoContent.icon === "string") icon.textContent = promoContent.icon;
-    if (title && typeof promoContent.title === "string") title.textContent = promoContent.title;
-    if (button) {
-      if (typeof promoContent.buttonLabel === "string") button.textContent = promoContent.buttonLabel;
-      button.href = homepageHref(promoContent.buttonUrl);
     }
   }
 
@@ -858,7 +871,9 @@ function applyHomepageContent(settings) {
   }
   if (socialsColumn) {
     const title = socialsColumn.querySelector("h3");
-    if (title && typeof footer.socialTitle === "string") title.textContent = footer.socialTitle;
+    if (title && typeof footer.socialTitle === "string") {
+      title.textContent = footer.socialTitle === "Social Media" ? "Follow Us" : footer.socialTitle;
+    }
   }
   if (subscribe) {
     const title = subscribe.querySelector("h3");
@@ -887,7 +902,6 @@ async function loadManagedSiteContent() {
     }
 
     const { categories, items, pages, settings } = content;
-    renderLatestArticleLinks(content.latestArticles);
     const categoryIds = new Set(categories.map((category) => category.id));
     knownSiteCategoryIds.forEach((id) => {
       if (categoryIds.has(id)) return;
@@ -899,7 +913,7 @@ async function loadManagedSiteContent() {
       if (staleCard) staleCard.hidden = true;
     });
     applyHomepageContent(settings);
-    renderHomeLayout(settings, items);
+    renderHomeLayout(settings, items, content.homeArticles);
 
     applyManagedPages(pages || []);
     categories.forEach((category) => {
@@ -922,6 +936,7 @@ async function loadManagedSiteContent() {
         const card = Array.from(cardGrid.children).find((element) => element.id === category.id);
         if (card) cardGrid.appendChild(card);
       });
+    applyHomepageModuleLayout(settings.homeLayout || {});
   } catch (error) {
     console.error("Could not load managed site content:", error);
   }
@@ -948,7 +963,7 @@ function getSearchText(element) {
 }
 
 function getSearchContext(element) {
-  const section = element.closest(".update-card, .side-card, .promo, .hero, .about, .footer-grid > div, nav");
+  const section = element.closest(".update-card, .side-card, .hero, .about, .footer-grid > div, nav");
   if (!section || section === element) return "";
 
   const heading = section.querySelector("h1, h2, h3, h4, h5, h6, .card-head, .side-title, .eyebrow");
@@ -957,7 +972,7 @@ function getSearchContext(element) {
 
 function getSearchIndex() {
   const candidates = document.querySelectorAll(
-    "h1, h2, h3, h4, h5, h6, p, li, a, button, img[alt], .card-head, .side-title, .latest-item, [data-search], [data-keywords]"
+    "h1, h2, h3, h4, h5, h6, p, li, a, button, img[alt], .card-head, .side-title, [data-search], [data-keywords]"
   );
 
   return Array.from(candidates)
@@ -1205,7 +1220,6 @@ document.addEventListener("keydown", (event) => {
   navMoreMenu.hidden = true;
 });
 
-renderPosts();
 renderHomeLayout({ homeLayout: { columns: {} } });
 loadManagedSiteContent();
 

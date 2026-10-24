@@ -1,3 +1,5 @@
 /backend/config.local.php
+/node_modules/
+/.env
 /uploads/articles/*
 !/uploads/articles/.gitkeep

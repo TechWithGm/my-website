@@ -96,19 +96,6 @@ function cj_public_content(PDO $db): array
             $homeArticles[$tabSlug][] = $item;
         }
     }
-    $latestArticleRows = cj_article_rows(
-        $db,
-        " WHERE a.status = 'published' AND a.published_at <= NOW() AND c.is_active = 1",
-        [],
-        ' ORDER BY a.published_at DESC, a.id DESC LIMIT 8'
-    );
-    $latestArticles = array_map(
-        static fn (array $row): array => [
-            'title' => $row['title'],
-            'url' => '/' . rawurlencode($row['slug']) . '/',
-        ],
-        $latestArticleRows
-    );
     foreach ($homeArticles as $tabSlug => $tabItems) {
         $homeArticles[$tabSlug] = array_slice($tabItems, 0, 30);
     }
@@ -122,38 +109,6 @@ function cj_public_content(PDO $db): array
         ));
     }
 
-    $updates = $db->query(
-        'SELECT title, url, description, display_date FROM latest_updates
-         WHERE is_published = 1 ORDER BY sort_order, updated_at DESC, id DESC LIMIT 20'
-    )->fetchAll();
-    $latestItems = [];
-    $latestArticleUrls = [];
-    foreach ($homeArticles['latest-updates'] ?? [] as $articleItem) {
-        $latestArticleUrls[$articleItem['url']] = true;
-        $latestItems[] = $articleItem;
-        if (count($latestItems) >= 30) {
-            break;
-        }
-    }
-    foreach ($updates as $update) {
-        if ($update['url'] !== '' && isset($latestArticleUrls[$update['url']])) {
-            continue;
-        }
-        $latestItems[] = [
-            'title' => $update['title'],
-            'url' => $update['url'],
-            'displayDate' => $update['display_date'],
-            'description' => $update['description'],
-            'isArticle' => false,
-        ];
-        if (count($latestItems) >= 30) {
-            break;
-        }
-    }
-    foreach ($latestItems as $item) {
-        $items[] = ['categoryId' => 'latest-updates'] + $item;
-    }
-
     $settings = cj_homepage_settings($db);
     $quickLinks = $db->query(
         "SELECT title, url, bg_color AS \"bgColor\", text_color AS \"textColor\"
@@ -164,7 +119,6 @@ function cj_public_content(PDO $db): array
         'categories' => $categories,
         'items' => $items,
         'homeArticles' => $homeArticles,
-        'latestArticles' => $latestArticles,
         'homeTabs' => cj_home_tab_definitions(),
         'pages' => [],
         'settings' => $settings,
@@ -195,7 +149,7 @@ function cj_homepage_settings(PDO $db): array
                 $content['homeLayout'][$key] = $default;
             }
         }
-        foreach (['titles', 'useCustomLists', 'columns'] as $section) {
+        foreach (['titles', 'useCustomLists', 'columns', 'moduleOrder', 'moduleVisibility'] as $section) {
             if (!is_array($content['homeLayout'][$section] ?? null)) {
                 $content['homeLayout'][$section] = $defaults['homeLayout'][$section];
             }
@@ -212,6 +166,7 @@ function cj_homepage_settings(PDO $db): array
     if (isset($content['hero']) && is_array($content['hero'])) {
         unset($content['hero']['loginLabel']);
     }
+    unset($content['aadhaarServices'], $content['promos']);
     foreach (['footer' => 'quickLinks', 'navigation' => 'moreLinks'] as $section => $field) {
         if (!isset($content[$section][$field]) || !is_array($content[$section][$field])) {
             continue;
@@ -367,6 +322,81 @@ function cj_admin_article_list(PDO $db): never
     cj_send_json(['data' => array_map('cj_public_article', $rows)]);
 }
 
+function cj_notify_new_publication(PDO $db, array $article): array
+{
+    try {
+        $subscribers = $db->query(
+            'SELECT email FROM newsletter_subscribers ORDER BY id LIMIT 5001'
+        )->fetchAll(PDO::FETCH_COLUMN);
+        if (!$subscribers) {
+            return ['status' => 'skipped', 'message' => 'No email subscribers yet.'];
+        }
+        if (count($subscribers) > 5000) {
+            error_log('Article email notification skipped: subscriber count exceeds the 5000-recipient batch limit.');
+            return ['status' => 'failed', 'message' => 'There are too many subscribers for one notification batch.'];
+        }
+
+        $config = cj_config();
+        if ($config['email_notifier_url'] === '' || $config['email_notifier_token'] === '') {
+            error_log('Article email notification is not configured.');
+            return ['status' => 'failed', 'message' => 'Email notifications are not configured on the server.'];
+        }
+        $notifierUrl = $config['email_notifier_url'];
+        if (!preg_match('~^https?://~i', $notifierUrl)) {
+            $notifierUrl = 'https://' . $notifierUrl;
+        }
+        $notifierParts = parse_url($notifierUrl);
+        if (!is_array($notifierParts)
+            || !in_array(strtolower((string) ($notifierParts['scheme'] ?? '')), ['http', 'https'], true)
+            || empty($notifierParts['host'])
+            || isset($notifierParts['user'])
+            || isset($notifierParts['pass'])
+            || isset($notifierParts['path'])) {
+            error_log('Article email notification URL must be an absolute HTTP or HTTPS service URL.');
+            return ['status' => 'failed', 'message' => 'Email notification service URL is invalid.'];
+        }
+
+        $payload = json_encode([
+            'article' => [
+                'title' => $article['title'],
+                'category' => $article['category'],
+                'description' => $article['shortDescription'],
+                'url' => $article['url'],
+            ],
+            'recipients' => array_values(array_filter($subscribers, static fn ($email): bool => is_string($email))),
+        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if (!is_string($payload)) {
+            error_log('Could not encode article email notification payload.');
+            return ['status' => 'failed', 'message' => 'Email notification could not be prepared.'];
+        }
+
+        $context = stream_context_create([
+            'http' => [
+                'method' => 'POST',
+                'header' => "Content-Type: application/json\r\n"
+                    . "Authorization: Bearer {$config['email_notifier_token']}\r\n"
+                    . 'Content-Length: ' . strlen($payload) . "\r\n",
+                'content' => $payload,
+                'timeout' => 45,
+                'ignore_errors' => true,
+            ],
+        ]);
+        $response = file_get_contents($notifierUrl . '/internal/article-published', false, $context);
+        $statusLine = $http_response_header[0] ?? '';
+        if (!is_string($response) || !preg_match('/\s202(?:\s|$)/', $statusLine)) {
+            error_log('Article email notification service request failed; HTTP response: ' . ($statusLine ?: 'unavailable'));
+            return ['status' => 'failed', 'message' => 'Article published, but email notifications could not be delivered.'];
+        }
+
+        $result = json_decode($response, true);
+        $sentCount = is_array($result) ? (int) ($result['sentCount'] ?? 0) : 0;
+        return ['status' => 'sent', 'sentCount' => $sentCount];
+    } catch (Throwable $error) {
+        error_log('Article email notification failed: ' . $error->getMessage());
+        return ['status' => 'failed', 'message' => 'Article published, but email notifications could not be delivered.'];
+    }
+}
+
 function cj_admin_save_article(PDO $db, ?int $id): never
 {
     cj_require_method($id === null ? 'POST' : 'PUT');
@@ -377,8 +407,9 @@ function cj_admin_save_article(PDO $db, ?int $id): never
         $db->beginTransaction();
         $oldSlug = null;
         $oldCategorySlug = null;
+        $wasPublished = false;
         if ($id !== null) {
-            $current = $db->prepare('SELECT slug, category_slug FROM articles WHERE id = ? FOR UPDATE');
+            $current = $db->prepare('SELECT slug, category_slug, status FROM articles WHERE id = ? FOR UPDATE');
             $current->execute([$id]);
             $currentArticle = $current->fetch();
             if ($currentArticle === false) {
@@ -387,6 +418,7 @@ function cj_admin_save_article(PDO $db, ?int $id): never
             }
             $oldSlug = $currentArticle['slug'];
             $oldCategorySlug = $currentArticle['category_slug'];
+            $wasPublished = $currentArticle['status'] === 'published';
         }
         $category = $db->prepare('SELECT is_active FROM categories WHERE slug = ?');
         $category->execute([$article['category_slug']]);
@@ -436,7 +468,18 @@ function cj_admin_save_article(PDO $db, ?int $id): never
         $db->commit();
         $stmt = $db->prepare(cj_article_select_sql() . ' WHERE a.id = ?');
         $stmt->execute([$id]);
-        cj_send_json(['data' => cj_public_article($stmt->fetch())], $oldSlug === null ? 201 : 200);
+        $savedArticle = $stmt->fetch();
+        $publicArticle = cj_public_article($savedArticle);
+        $emailNotification = null;
+        if (!$wasPublished && $savedArticle['status'] === 'published'
+            && $savedArticle['published_at'] !== null
+            && new DateTimeImmutable($savedArticle['published_at']) <= new DateTimeImmutable()) {
+            $emailNotification = cj_notify_new_publication($db, $publicArticle);
+        }
+        cj_send_json([
+            'data' => $publicArticle,
+            'emailNotification' => $emailNotification,
+        ], $oldSlug === null ? 201 : 200);
     } catch (PDOException $error) {
         if ($db->inTransaction()) {
             $db->rollBack();
@@ -995,6 +1038,32 @@ function cj_admin_dispatch(PDO $db, array $segments): never
         }
         cj_admin_latest_updates($db, $method, $id === null ? null : (int) $id);
     }
+    if ($resource === 'customer-data') {
+        cj_require_admin();
+        $id = isset($segments[3]) ? filter_var($segments[3], FILTER_VALIDATE_INT) : null;
+        if ($method === 'GET' && $identifier === 'contacts') {
+            $contacts = $db->query(
+                'SELECT id, name, email, message, created_at FROM contact_messages ORDER BY created_at DESC, id DESC LIMIT 500'
+            )->fetchAll();
+            cj_send_json(['data' => $contacts]);
+        }
+        if ($method === 'GET' && $identifier === 'subscribers') {
+            $subscribers = $db->query(
+                'SELECT id, email, subscribed_at FROM newsletter_subscribers ORDER BY subscribed_at DESC, id DESC LIMIT 500'
+            )->fetchAll();
+            cj_send_json(['data' => $subscribers]);
+        }
+        if ($method === 'DELETE' && in_array($identifier, ['contacts', 'subscribers'], true) && $id) {
+            $table = $identifier === 'contacts' ? 'contact_messages' : 'newsletter_subscribers';
+            $stmt = $db->prepare("DELETE FROM $table WHERE id = ?");
+            $stmt->execute([(int) $id]);
+            if ($stmt->rowCount() === 0) {
+                cj_send_json(['error' => 'Customer record not found.'], 404);
+            }
+            cj_send_json(['success' => true]);
+        }
+        cj_send_json(['error' => 'Customer data route not found.'], 404);
+    }
     cj_send_json(['error' => 'API route not found.'], 404);
 }
 
@@ -1026,6 +1095,21 @@ try {
         }
         $rows = cj_article_rows($db, $where, $params, ' ORDER BY a.is_featured DESC, a.published_at DESC, a.id DESC LIMIT ' . $limit);
         cj_send_json(['data' => array_map('cj_public_article', $rows)]);
+    }
+    if (($segments[0] ?? '') === 'subscribe' && ($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
+        cj_check_rate_limit($db, 'newsletter-subscribe', 5, 900);
+        $input = cj_json_input();
+        $email = filter_var(strtolower(trim((string) ($input['email'] ?? ''))), FILTER_VALIDATE_EMAIL);
+        if (!$email || strlen($email) > 254) {
+            cj_send_json(['error' => 'Enter a valid email address.'], 422);
+        }
+        if (cj_is_mysql($db)) {
+            $stmt = $db->prepare('INSERT IGNORE INTO newsletter_subscribers (email) VALUES (?)');
+        } else {
+            $stmt = $db->prepare('INSERT INTO newsletter_subscribers (email) VALUES (?) ON CONFLICT (email) DO NOTHING');
+        }
+        $stmt->execute([$email]);
+        cj_send_json(['success' => true, 'message' => 'Thanks for subscribing!']);
     }
     if (($segments[0] ?? '') === 'contact' && ($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
         cj_check_rate_limit($db, 'contact-form', 5, 900);

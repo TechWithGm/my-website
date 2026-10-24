@@ -35,6 +35,43 @@
     ["offline-outsourcing-job", "Offline/Outsourcing Jobs"],
     ["important", "Important"],
   ];
+  const homepageModuleGroups = [
+    {
+      id: "primary",
+      title: "Main page section order",
+      items: [
+        ["hero", "Hero banner"],
+        ["biharBhoomi", "Bihar Bhoomi card"],
+        ["quickLinks", "Quick Links"],
+        ["content", "Main content"],
+      ]
+    },
+    {
+      id: "content",
+      title: "Main content order",
+      items: [
+        ["homeUpdates", "Article category sections"],
+        ["categoryCards", "Category cards"],
+        ["about", "About Cyber Junction"],
+      ]
+    },
+    {
+      id: "articleSections",
+      title: "Article section cards",
+      items: [
+        ["results", "Results"],
+        ["admit", "Admit Card"],
+        ["jobs", "Latest Job"],
+        ["scholarship", "Scholarships"],
+        ["answerKey", "Answer Key"],
+        ["syllabus", "Syllabus"],
+        ["admission", "Admission"],
+        ["certificate", "Certificate"],
+        ["offlineOutsourcingJob", "Offline/Outsourcing Jobs"],
+        ["important", "Important"],
+      ]
+    },
+  ];
 
   function showMessage(element, message, isError = true) {
     element.textContent = message || "";
@@ -211,6 +248,72 @@
     renderHomepageEditor();
   }
 
+  async function loadCustomerData() {
+    const [contactsResult, subscribersResult] = await Promise.allSettled([
+      request("customer-data/contacts"),
+      request("customer-data/subscribers")
+    ]);
+    const contactError = document.getElementById("contactDataError");
+    const subscriberError = document.getElementById("subscriberDataError");
+    if (contactsResult.status === "fulfilled") {
+      contactError.textContent = "";
+      renderCustomerRows(
+        document.getElementById("contactMessageRows"),
+        document.getElementById("contactMessageEmpty"),
+        contactsResult.value.data,
+        ["name", "email", "message", "created_at"],
+        "contacts"
+      );
+    } else {
+      document.getElementById("contactMessageRows").replaceChildren();
+      document.getElementById("contactMessageEmpty").hidden = true;
+      contactError.textContent = contactsResult.reason.message;
+    }
+    if (subscribersResult.status === "fulfilled") {
+      subscriberError.textContent = "";
+      renderCustomerRows(
+        document.getElementById("subscriberRows"),
+        document.getElementById("subscriberEmpty"),
+        subscribersResult.value.data,
+        ["email", "subscribed_at"],
+        "subscribers"
+      );
+    } else {
+      document.getElementById("subscriberRows").replaceChildren();
+      document.getElementById("subscriberEmpty").hidden = true;
+      subscriberError.textContent = subscribersResult.reason.message;
+    }
+  }
+
+  function renderCustomerRows(tbody, emptyState, records, columns, type) {
+    const rows = Array.isArray(records) ? records : [];
+    tbody.replaceChildren();
+    rows.forEach((record) => {
+      const row = document.createElement("tr");
+      columns.forEach((key) => {
+        const cell = document.createElement("td");
+        cell.textContent = String(record[key] ?? "");
+        row.appendChild(cell);
+      });
+      const actions = document.createElement("td");
+      const remove = makeAction("Delete", async () => {
+        if (!window.confirm(`Delete this ${type === "contacts" ? "contact message" : "subscriber"}?`)) return;
+        try {
+          await request(`customer-data/${type}/${encodeURIComponent(record.id)}`, { method: "DELETE" });
+          await loadCustomerData();
+          showMessage(dashboardMessage, "Customer record deleted.", false);
+        } catch (error) {
+          showMessage(dashboardMessage, error.message);
+        }
+      }, "danger-button");
+      remove.setAttribute("aria-label", `Delete ${type} record`);
+      actions.appendChild(remove);
+      row.appendChild(actions);
+      tbody.appendChild(row);
+    });
+    emptyState.hidden = rows.length > 0;
+  }
+
   function ensureHomepageLayout() {
     if (!homepageContent.homeLayout || typeof homepageContent.homeLayout !== "object") {
       homepageContent.homeLayout = {};
@@ -227,6 +330,19 @@
     if (!Array.isArray(layout.quickLinks)) layout.quickLinks = [];
     if (!layout.useCustomLists || typeof layout.useCustomLists !== "object") layout.useCustomLists = {};
     if (!layout.columns || typeof layout.columns !== "object") layout.columns = {};
+    if (!layout.moduleOrder || typeof layout.moduleOrder !== "object") layout.moduleOrder = {};
+    if (!layout.moduleVisibility || typeof layout.moduleVisibility !== "object") layout.moduleVisibility = {};
+    homepageModuleGroups.forEach((group) => {
+      const ids = group.items.map(([id]) => id);
+      const configured = Array.isArray(layout.moduleOrder[group.id]) ? layout.moduleOrder[group.id] : [];
+      layout.moduleOrder[group.id] = [
+        ...new Set(configured.filter((id) => ids.includes(id))),
+        ...ids.filter((id) => !configured.includes(id))
+      ];
+      ids.forEach((id) => {
+        if (typeof layout.moduleVisibility[id] !== "boolean") layout.moduleVisibility[id] = true;
+      });
+    });
     sectionKeys.forEach((key) => {
       layout.useCustomLists[key] = layout.useCustomLists[key] === true;
       if (!Array.isArray(layout.columns[key])) layout.columns[key] = [];
@@ -416,6 +532,7 @@
     const editor = document.getElementById("homeLayoutEditor");
     if (!editor) return;
     editor.replaceChildren();
+    renderHomepageModuleEditor();
     [
       ["results", "Result", "results"],
       ["admit", "Admit Card", "admit"],
@@ -434,6 +551,59 @@
         categoryId,
         description: `Links shown in the ${title} homepage card.`
       });
+    });
+  }
+
+  function renderHomepageModuleEditor() {
+    const editor = document.getElementById("homepageModuleEditor");
+    if (!editor) return;
+    const layout = ensureHomepageLayout();
+    editor.replaceChildren();
+    const heading = document.createElement("h2");
+    heading.textContent = "Homepage sections";
+    editor.appendChild(heading);
+    homepageModuleGroups.forEach((group) => {
+      const fieldset = document.createElement("fieldset");
+      fieldset.className = "homepage-module-group";
+      const legend = document.createElement("legend");
+      legend.textContent = group.title;
+      fieldset.appendChild(legend);
+      group.items.forEach(([id, label]) => {
+        const row = document.createElement("div");
+        row.className = "homepage-module-row";
+        const visibleLabel = document.createElement("label");
+        visibleLabel.className = "check-label";
+        const visible = document.createElement("input");
+        visible.type = "checkbox";
+        visible.checked = layout.moduleVisibility[id];
+        visible.addEventListener("change", () => {
+          layout.moduleVisibility[id] = visible.checked;
+        });
+        const visibleText = document.createElement("span");
+        visibleText.textContent = label;
+        visibleLabel.append(visible, visibleText);
+
+        const actions = document.createElement("div");
+        actions.className = "homepage-json-item-actions";
+        const order = layout.moduleOrder[group.id];
+        const index = order.indexOf(id);
+        const moveUp = makeAction("↑", () => {
+          [order[index - 1], order[index]] = [order[index], order[index - 1]];
+          renderHomepageModuleEditor();
+        }, "quiet-button");
+        moveUp.setAttribute("aria-label", `Move ${label} up`);
+        moveUp.disabled = index === 0;
+        const moveDown = makeAction("↓", () => {
+          [order[index], order[index + 1]] = [order[index + 1], order[index]];
+          renderHomepageModuleEditor();
+        }, "quiet-button");
+        moveDown.setAttribute("aria-label", `Move ${label} down`);
+        moveDown.disabled = index === order.length - 1;
+        actions.append(moveUp, moveDown);
+        row.append(visibleLabel, actions);
+        fieldset.appendChild(row);
+      });
+      editor.appendChild(fieldset);
     });
   }
 
@@ -457,7 +627,6 @@
     if (values.length) return blankHomepageValue(values[0]);
     const normalizedPath = path.filter((part) => typeof part !== "number").join(".");
     const templates = {
-      "promos": { id: "", icon: "", title: "", buttonLabel: "", buttonUrl: "" },
       "socialLinks": { label: "", url: "" },
       "rtps.services": { id: "", title: "", url: "", options: [] },
       "rtps.services.options": { title: "", url: "" },
@@ -933,7 +1102,17 @@
       articleToForm(result.data);
       document.getElementById("articleFormTitle").textContent = "Edit article";
       document.getElementById("unpublishArticleButton").hidden = false;
-      showMessage(dashboardMessage, status === "published" ? "Article published." : status === "unpublished" ? "Article unpublished." : "Draft saved.", false);
+      let message = status === "published" ? "Article published." : status === "unpublished" ? "Article unpublished." : "Draft saved.";
+      let isError = false;
+      if (result.emailNotification?.status === "sent") {
+        message += ` Email notification sent to ${result.emailNotification.sentCount} subscriber(s).`;
+      } else if (result.emailNotification?.status === "failed") {
+        message += ` ${result.emailNotification.message}`;
+        isError = true;
+      } else if (result.emailNotification?.status === "skipped") {
+        message += ` ${result.emailNotification.message}`;
+      }
+      showMessage(dashboardMessage, message, isError);
       await Promise.all([loadArticles(), loadArticleCatalog()]);
       renderHomepageLayoutEditor();
       renderQuickLinks();
@@ -1346,6 +1525,9 @@
   document.getElementById("cancelCategoryButton").addEventListener("click", resetCategoryForm);
   document.getElementById("categoryForm").addEventListener("submit", saveCategory);
   document.getElementById("saveHomepageButton").addEventListener("click", saveHomepage);
+  document.getElementById("refreshCustomerDataButton").addEventListener("click", () => {
+    loadCustomerData().catch((error) => showMessage(dashboardMessage, error.message));
+  });
   document.getElementById("articleQuery").addEventListener("input", () => {
     window.clearTimeout(refreshTimer);
     refreshTimer = window.setTimeout(() => loadArticles().catch((error) => showMessage(dashboardMessage, error.message)), 250);
@@ -1355,6 +1537,9 @@
   document.querySelectorAll(".tab-button").forEach((button) => {
     button.addEventListener("click", () => {
       activatePanel(button.dataset.panel);
+      if (button.dataset.panel === "customerDataPanel") {
+        loadCustomerData().catch((error) => showMessage(dashboardMessage, error.message));
+      }
     });
   });
 
