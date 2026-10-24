@@ -1,0 +1,18 @@
+{
+  "name": "cyber-junction-email-notifier",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Send email notifications for newly published Cyber Junction articles.",
+  "main": "email-notifier.js",
+  "scripts": {
+    "start": "node email-notifier.js",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@sendgrid/mail": "^8.1.4",
+    "dotenv": "^16.4.7"
+  }
+}

@@ -1,0 +1,51 @@
+services:
+  - type: web
+    name: cyber-junction
+    runtime: docker
+    plan: free
+    region: singapore
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/health
+    envVars:
+      - key: CJ_DB_DRIVER
+        value: pgsql
+      - key: CJ_DB_HOST
+        value: aws-0-ap-southeast-1.pooler.supabase.com
+      - key: CJ_DB_PORT
+        value: "5432"
+      - key: CJ_DB_NAME
+        value: postgres
+      - key: CJ_DB_USER
+        value: postgres.twhoqfhedhqaoknygbsg
+      - key: CJ_DB_PASSWORD
+        sync: false
+      - key: CJ_APP_KEY
+        sync: false
+      - key: CJ_BASE_URL
+        value: https://cyber-junction.onrender.com
+      - key: CJ_EMAIL_NOTIFIER_URL
+        fromService:
+          type: web
+          name: cyber-junction-email-notifier
+          property: host
+      - key: CJ_EMAIL_NOTIFIER_TOKEN
+        sync: false
+      - key: CJ_TIMEZONE
+        value: Asia/Kolkata
+  - type: web
+    name: cyber-junction-email-notifier
+    runtime: node
+    plan: free
+    region: singapore
+    buildCommand: npm ci --omit=dev
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: SENDGRID_API_KEY
+        sync: false
+      - key: SENDGRID_FROM_EMAIL
+        sync: false
+      - key: EMAIL_NOTIFICATION_TOKEN
+        sync: false
+      - key: SITE_NAME
+        value: Cyber Junction
