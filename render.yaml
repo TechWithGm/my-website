@@ -5,7 +5,7 @@ services:
     plan: free
     region: singapore
     dockerfilePath: ./Dockerfile
-    healthCheckPath: /
+    healthCheckPath: /api/health
     envVars:
       - key: CJ_DB_DRIVER
         value: pgsql

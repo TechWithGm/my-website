@@ -124,7 +124,10 @@
       setAuthenticated(session.authenticated, session.email);
       if (session.authenticated) await loadDashboard();
     } catch (error) {
-      showMessage(authMessage, `${error.message} Start the PHP server and configure the database first.`);
+      const hint = error.message.includes("temporarily unavailable")
+        ? "Check the deployed API health endpoint and server logs; locally, verify the PHP server and database configuration."
+        : error.message;
+      showMessage(authMessage, hint);
     }
   }
 

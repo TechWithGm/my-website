@@ -1070,6 +1070,11 @@ function cj_admin_dispatch(PDO $db, array $segments): never
 try {
     $db = cj_db();
     $segments = explode('/', cj_api_route());
+    if (($segments[0] ?? '') === 'health') {
+        cj_require_method('GET');
+        $db->query('SELECT COUNT(*) FROM admins')->fetchColumn();
+        cj_send_json(['status' => 'ok', 'database' => 'ok']);
+    }
     if (($segments[0] ?? '') === 'admin') {
         cj_admin_dispatch($db, $segments);
     }

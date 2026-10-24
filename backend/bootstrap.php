@@ -13,9 +13,10 @@ function cj_db(): PDO
     }
 
     $config = cj_config();
-    if ($config['db_user'] === '' || $config['app_key'] === '' || strlen($config['app_key']) < 32
+    if ($config['db_user'] === '' || $config['db_password'] === ''
+        || $config['app_key'] === '' || strlen($config['app_key']) < 32
         || ($config['admin_setup_key'] !== '' && strlen($config['admin_setup_key']) < 32)) {
-        throw new RuntimeException('Configure CJ_DB_USER, a CJ_APP_KEY, and (if enabled) a CJ_ADMIN_SETUP_KEY with at least 32 characters.');
+        throw new RuntimeException('Configure CJ_DB_USER and CJ_DB_PASSWORD, a CJ_APP_KEY, and (if enabled) a CJ_ADMIN_SETUP_KEY with at least 32 characters.');
     }
     if (!in_array($config['db_driver'], ['mysql', 'pgsql'], true)) {
         throw new RuntimeException('CJ_DB_DRIVER must be mysql or pgsql.');
