@@ -7,6 +7,8 @@ services:
     dockerfilePath: ./Dockerfile
     healthCheckPath: /
     envVars:
+      - key: CJ_DB_DRIVER
+        value: pgsql
       - key: CJ_DB_HOST
         value: aws-0-ap-southeast-1.pooler.supabase.com
       - key: CJ_DB_PORT
@@ -18,8 +20,6 @@ services:
       - key: CJ_DB_PASSWORD
         sync: false
       - key: CJ_APP_KEY
-        sync: false
-      - key: CJ_ADMIN_SETUP_KEY
         sync: false
       - key: CJ_BASE_URL
         value: https://cyber-junction.onrender.com
