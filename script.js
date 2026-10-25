@@ -279,6 +279,9 @@ function homepageHref(value, fallback = "#") {
   const href = legacyHomepageLinks[rawHref.toLowerCase()] || rawHref;
   if (/^https:\/\//i.test(href) || /^mailto:[^\s]+$/i.test(href)
     || /^\/(?!\/)/.test(href) || /^#[a-z0-9_-]+$/i.test(href)) {
+    if (window.location.protocol === "file:" && /^\/(?!\/)/.test(href)) {
+      return `http://localhost:5000${href}`;
+    }
     return href;
   }
   return fallback;
