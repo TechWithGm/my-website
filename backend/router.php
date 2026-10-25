@@ -22,6 +22,12 @@ if ($uriPath === '/admin' || $uriPath === '/admin/') {
     exit;
 }
 
+if (preg_match('#^/scholar/?$#i', $uriPath)) {
+    $_GET['slug'] = 'scholarship';
+    require $root . '/category.php';
+    exit;
+}
+
 if (preg_match('#^/category/([a-z0-9-]+)/?$#i', $uriPath, $matches)) {
     $_GET['slug'] = strtolower($matches[1]);
     require $root . '/category.php';

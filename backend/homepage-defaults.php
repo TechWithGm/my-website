@@ -68,7 +68,7 @@ function cj_homepage_defaults(): array
         ],
         'homeLayout' => [
             'titles' => [
-                'quickLinks' => 'Quick Links',
+                'quickLinks' => 'Important Updates',
                 'results' => 'Result',
                 'admit' => 'Admit Card',
                 'jobs' => 'Latest Job',
